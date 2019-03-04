@@ -1,0 +1,27 @@
+
+Napit:
+-------------
+Enempi
+Vähempi
+Valitse
+Takaisin
+
+Alkuruutu:
+-------------
+Aja ohjelma
+Luo ohjelma
+Poista ohjelma
+
+Luo ohjelma:
+--------------
+[]
+Lisää työvaihe > Liike 1 > Liike 2 > ... > Liike N
+Poista työvaihe
+Järjestele työvaiheita
+Vaihda viiveaika
+Valitse ajan tarkkuus
+Vaihda liikkeiden määrä
+
+
+
+
