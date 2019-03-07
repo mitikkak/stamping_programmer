@@ -6,7 +6,7 @@ namespace stamping
 {
 size_t Program::printTo(Print& p) const
 {
-	const char* serialized = "Naada";
+	const char* serialized = phases.serialize();
 	const int length = strlen(serialized);
 	for (int i = 0; i < length; i++)
 	{
@@ -14,4 +14,9 @@ size_t Program::printTo(Print& p) const
 	}
 	return length;
 }
+void Program::addPhase(Output const o)
+{
+	phases.add(o);
+}
+
 }

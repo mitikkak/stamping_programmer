@@ -10,6 +10,7 @@ set(product_sources ${SRC_DIR}/Loop.cpp
         ${SRC_DIR}/Setup.cpp
         ${SRC_DIR}/Program.cpp
         ${SRC_DIR}/SerialPrinter.cpp
+        ${SRC_DIR}/Phases.cpp
 )
 set(stub_sources 
 		${STUBS_DIR}/Print.cpp
