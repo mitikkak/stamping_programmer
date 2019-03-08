@@ -20,14 +20,16 @@ protected:
 
 TEST_F(TestCreateProgram, initiallyEmpty)
 {
-	Program program;
+	Actuators actuators;
+	Program program(actuators);
 	SerialPrinter printer;
 	program.printTo(printer);
 	EXPECT_STREQ("[]", printer.output());
 }
 TEST_F(TestCreateProgram, onePhase)
 {
-	Program program;
+	Actuators actuators;
+	Program program(actuators);
 	SerialPrinter printer;
 	program.addPhase(Output(1, 500));
 	program.printTo(printer);
@@ -35,7 +37,8 @@ TEST_F(TestCreateProgram, onePhase)
 }
 TEST_F(TestCreateProgram, twoPhases)
 {
-	Program program;
+	Actuators actuators;
+	Program program(actuators);
 	SerialPrinter printer;
 	program.addPhase(Output(4, 13));
 	program.addPhase(Output(2, 20000));

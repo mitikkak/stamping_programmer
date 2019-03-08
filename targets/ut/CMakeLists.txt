@@ -5,15 +5,13 @@ set(TEST_SRC_DIR ${PROJECT_ROOT}/tests)
 set(test_sources 
              ${ARDUINO_CMAKE_DIR}/ut/Runner.cpp
              ${TEST_SRC_DIR}/TestCreateProgram.cpp
+             ${TEST_SRC_DIR}/TestRunProgram.cpp
 )
-set(product_sources ${SRC_DIR}/Loop.cpp
-        ${SRC_DIR}/Setup.cpp
-        ${SRC_DIR}/Program.cpp
-        ${SRC_DIR}/SerialPrinter.cpp
-        ${SRC_DIR}/Phases.cpp
-)
+
 set(stub_sources 
 		${STUBS_DIR}/Print.cpp
+		${STUBS_DIR}/Arduino.cpp
+		${STUBS_DIR}/PinEvents.cpp
 )
 
 add_executable(${PROJECT_NAME} 

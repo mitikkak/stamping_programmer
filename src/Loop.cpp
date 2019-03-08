@@ -1,3 +1,8 @@
 #include "Arduino.h"
+#include "Components.h"
 
-void loop() {}
+void loop()
+{
+	stamping::Output o;
+	phases.add(o);
+}

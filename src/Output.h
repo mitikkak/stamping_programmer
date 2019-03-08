@@ -4,6 +4,7 @@ namespace stamping
 class Output
 {
 public:
+	static Output null;
 	Output()
 	: line_{0}, period_{0} {}
 	Output(const int state, const int period)

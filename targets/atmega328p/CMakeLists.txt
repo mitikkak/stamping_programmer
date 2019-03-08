@@ -10,17 +10,7 @@ include(${ARDUINO_CMAKE_DIR}/atmega328/deploy.cmake)
 set(ARDUINO_PINS ${ARDUINO_PATH}/hardware/arduino/avr/variants/standard)
 #set(ARDUINO_LCD_SRC ${ARDUINO_PATH}/libraries/LiquidCrystal/src/)
 
-set(sources
-    ${SRC_DIR}/Loop.cpp
-    ${SRC_DIR}/Setup.cpp
-    ${SRC_DIR}/Components.cpp
-    #${ARDUINO_LCD_SRC}/LiquidCrystal.cpp
-    #${IIC_LCD_SRC}/LiquidCrystal_I2C.cpp
-    #${ARDUINO_WIRE_SRC}/Wire.cpp
-    #${ARDUINO_WIRE_SRC}/utility/twi.c
-)
-
-add_executable(${PROJECT_NAME} ${sources} ${atmega328_core_sources})
+add_executable(${PROJECT_NAME} ${product_sources} ${atmega328_core_sources})
 target_link_libraries(${PROJECT_NAME} ${atmega328_linker_options})
 target_compile_options(
     ${PROJECT_NAME} PRIVATE
