@@ -12,6 +12,7 @@ set(stub_sources
 		${STUBS_DIR}/Print.cpp
 		${STUBS_DIR}/Arduino.cpp
 		${STUBS_DIR}/PinEvents.cpp
+		${STUBS_DIR}/Serial.cpp
 )
 
 add_executable(${PROJECT_NAME} 
