@@ -21,6 +21,7 @@ target_include_directories(
     ${ATMEGA328_CORE_SRC} 
     ${ARDUINO_PINS}
     ${SRC_DIR}
+    ${PIN_CHANGE_INT_DIR}
     #${GPS_DIR}
     #${SDFAT_DIR}
     #${ARDUINO_LCD_SRC}

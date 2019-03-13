@@ -7,3 +7,6 @@
 [submodule "SdFat"]
 	path = SdFat
 	url = https://github.com/greiman/SdFat.git
+[submodule "PinChangeInt"]
+	path = PinChangeInt
+	url = https://github.com/GreyGnome/PinChangeInt

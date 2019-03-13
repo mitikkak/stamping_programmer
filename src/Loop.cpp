@@ -6,6 +6,10 @@ struct Selection
     Selection(const char* const n)
     : name{n}
     {}
+    void run() const
+    {
+        Serial.print("Suoritetaan: "); Serial.println(name);
+    }
 
     const char* const name;
 };
@@ -44,6 +48,10 @@ public:
         atLine--;
         if (atLine < 0){ atLine = numOfSelections-1;}
     }
+    void runCurrent() const
+    {
+        selections[atLine].run();
+    }
 private:
     static const int numOfSelections{2};
     const Selection selections[numOfSelections];
@@ -55,17 +63,23 @@ Selections selections;
 
 void loop()
 {
-    selections.show();
-    buttons.read();
-    if (buttons.up())
+    if (buttons.touched())
     {
-        selections.prev();
+        if (buttons.up())
+        {
+            selections.prev();
+        }
+        if (buttons.down())
+        {
+            selections.next();
+        }
+        if (buttons.select())
+        {
+            selections.runCurrent();
+        }
+        selections.show();
+        buttons.clear();
     }
-    if (buttons.down())
-    {
-        selections.next();
-    }
-//    buttons.log();
 	stamping::Output o;
 	phases.add(o);
 }

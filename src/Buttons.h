@@ -6,17 +6,21 @@ class Buttons
 {
 public:
     void init();
-    void read();
-    bool select() const;
+    bool touched() const;
     bool up() const;
     bool down() const;
+    bool select() const;
+    bool back() const;
     void log() const;
+    void clear();
 private:
-    int upValue{0};
-    int downValue{0};
-    int selectValue{0};
-    int backValue{0};
-    unsigned long prevTime{0};
-    static const unsigned long thresholdTime{500};
+    static void upButtonCB();
+    static void downButtonCB();
+    static void selectButtonCB();
+    static void backButtonCB();
+    static int upValue;
+    static int downValue;
+    static int selectValue;
+    static int backValue;
 };
 }
