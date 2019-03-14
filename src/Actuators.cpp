@@ -15,14 +15,17 @@ Actuator::Actuator(const int pin, const int state)
 : state_{state},
   pin_{pin}
 {
-	pinMode(pin_, OUTPUT);
 }
 
-void Actuator::activate()
+void Actuator::start() const
+{
+	pinMode(pin_, OUTPUT);
+}
+void Actuator::on() const
 {
 	digitalWrite(pin_, ON);
 }
-void Actuator::deactivate()
+void Actuator::off() const
 {
 	digitalWrite(pin_, OFF);
 }
@@ -34,6 +37,7 @@ Actuators::Actuators()
 
 void Actuators::add(Actuator& act)
 {
+	act.start();
 	actuators[numOf] = &act;
 	numOf++;
 }
@@ -67,13 +71,13 @@ Actuator& Actuators::get(const int idx)
 	}
 	return nullActuator;
 }
-void Actuators::deactivate()
+void Actuators::off()
 {
 	for (int i = 0; i < size(); i++)
 	{
 		if(actuators[i])
 		{
-			actuators[i]->deactivate();
+			actuators[i]->off();
 		}
 	}
 }

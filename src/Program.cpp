@@ -69,15 +69,15 @@ void Program::addPhase(Output const o)
 }
 void Program::run()
 {
-    actuators.deactivate();
+    actuators.off();
 	for (int i = 0; i < phases.size(); i++)
 	{
-		actuators.deactivate();
+		actuators.off();
 		const Output& output = phases[i];
 		Actuator& actor = actuators.get(output.line());
-		actor.activate();
+		actor.on();
 		delay(output.period());
-		actor.deactivate();
+		actor.off();
 	}
 }
 #ifdef UNIT_TEST

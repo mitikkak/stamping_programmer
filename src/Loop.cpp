@@ -1,26 +1,56 @@
 #include "Arduino.h"
 #include "Components.h"
+#include "Program.h"
 
+class Runnable
+{
+public:
+	virtual ~Runnable() {}
+	virtual void run() = 0;
+};
 struct Selection
 {
-    Selection(const char* const n)
-    : name{n}
+    Selection(const char* const n, Runnable& r)
+    : name{n}, runner{r}
     {}
     void run() const
     {
         Serial.print("Suoritetaan: "); Serial.println(name);
+        runner.run();
     }
 
     const char* const name;
+    Runnable& runner;
 };
 
+class ExecuteProgram : public Runnable
+{
+public:
+	void run()
+	{
+		const char* savedProgramStr = "[1:1256][0:329][3:2132]";
+		stamping::Program p(actuators, savedProgramStr);
+		p.run();
+	}
+};
+class CreateProgram : public Runnable
+{
+public:
+	void run()
+	{
+
+	}
+};
+
+ExecuteProgram executeProgram;
+CreateProgram createProgram;
 class Selections
 {
 public:
     Selections()
     : selections{
-    Selection("Aja ohjelma"),
-    Selection("Luo ohjelma")
+    Selection("Aja ohjelma", executeProgram),
+    Selection("Luo ohjelma", createProgram)
     }
     {}
     void show() const
@@ -80,6 +110,4 @@ void loop()
         selections.show();
         buttons.clear();
     }
-	stamping::Output o;
-	phases.add(o);
 }

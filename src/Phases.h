@@ -1,4 +1,5 @@
 
+#pragma once
 #include "Output.h"
 #include "StringWrapper.h"
 namespace stamping

@@ -1,4 +1,5 @@
 
+#pragma once
 namespace stamping
 {
 
@@ -12,8 +13,9 @@ public:
 	static constexpr int INVALID_PIN{0xFF};
 	int state() const { return state_; }
 	int pin() const { return pin_; }
-	void activate();
-	void deactivate();
+	void start() const;
+	void on() const;
+	void off() const;
 private:
 	int state_{OFF};
 	int pin_{INVALID_PIN};
@@ -26,7 +28,7 @@ public:
 	int size() const;
 	const Actuator& operator[](const int idx) const;
 	Actuator& get(const int idx);
-	void deactivate();
+	void off();
 
 private:
 	static Actuator nullActuator;

@@ -43,7 +43,6 @@ protected:
 		expectedEvents.push_back(PinEvent(a4.pin(), Actuator::OFF, startTime));
 	}
 };
-#if 1
 TEST_F(TestRunProgram, empty)
 {
 	Program prog(actuators);
@@ -66,7 +65,6 @@ TEST_F(TestRunProgram, simplest)
 	expectedEvents.push_back(PinEvent(a1.pin(), Actuator::OFF, o1.period()));
 	receivedEvents.verify(expectedEvents);
 }
-#endif
 TEST_F(TestRunProgram, longStory)
 {
 	Program prog(actuators);
