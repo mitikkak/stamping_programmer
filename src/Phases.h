@@ -1,6 +1,6 @@
 
 #include "Output.h"
-
+#include "StringWrapper.h"
 namespace stamping
 {
 
@@ -9,7 +9,7 @@ class Phases
 public:
 	Phases();
 	void add(Output o);
-	const char* serialize() const;
+	void serialize(STRING_TYPE&) const;
 	int size() const { return numOfOutputs; }
 	const Output& operator[](const int) const;
 private:

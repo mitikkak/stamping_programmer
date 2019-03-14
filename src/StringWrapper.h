@@ -1,14 +1,17 @@
 
+#pragma once
+
 #ifdef UNIT_TEST
 #include <string>
-typedef std::string String;
+typedef std::string STRING_TYPE;
 #else
 #include "Arduino.h"
+typedef String STRING_TYPE;
 #endif
 
 class StringWrapper
 {
 public:
-	static String ToString( int value );
+	static STRING_TYPE ToString( int value );
 
 };

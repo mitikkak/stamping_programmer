@@ -45,3 +45,12 @@ TEST_F(TestCreateProgram, twoPhases)
 	program.printTo(printer);
 	EXPECT_STREQ("[4:13][2:20000]", printer.output());
 }
+TEST_F(TestCreateProgram, loadProgram)
+{
+	Actuators actuators;
+	std::string savedProgram = "[12:1256][14:329098][348:21432]";
+	Program program(actuators, savedProgram.c_str());
+	SerialPrinter printer;
+	program.printTo(printer);
+	EXPECT_STREQ(savedProgram.c_str(), printer.output());
+}

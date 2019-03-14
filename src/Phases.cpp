@@ -1,6 +1,6 @@
 
 #include "Phases.h"
-#include "StringWrapper.h"
+
 namespace stamping
 {
 Phases::Phases()
@@ -17,12 +17,13 @@ void Phases::add(Output o)
 	}
 }
 
-const char* Phases::serialize() const
+void Phases::serialize(STRING_TYPE& retValue) const
 {
-	String retValue = "";
+	retValue = "";
 	if (not numOfOutputs)
 	{
-		return "[]";
+		retValue = "[]";
+		return;
 	}
 	for (int i = 0; i < numOfOutputs; i++)
 	{
@@ -34,7 +35,6 @@ const char* Phases::serialize() const
 		retValue += ']';
 
 	}
-	return retValue.c_str();
 }
 const Output& Phases::operator[](const int idx) const
 {

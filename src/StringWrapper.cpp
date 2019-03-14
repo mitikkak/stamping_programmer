@@ -1,11 +1,11 @@
 
 #include "StringWrapper.h"
 
-String StringWrapper::ToString( int value )
+STRING_TYPE StringWrapper::ToString( int value )
 {
 #ifdef UNIT_TEST
 	return std::to_string(value);
 #else
-	return String(value);
+	return STRING_TYPE(value);
 #endif
 }

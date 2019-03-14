@@ -7,8 +7,8 @@ public:
 	static Output null;
 	Output()
 	: line_{0}, period_{0} {}
-	Output(const int state, const int period)
-	: line_{state},
+	Output(const int line, const int period)
+	: line_{line},
 	  period_{period}
 	{}
 	int line() const { return line_; }
