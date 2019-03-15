@@ -40,7 +40,7 @@ public:
 	{
 	    Serial.println("Avataan: ");Serial.println(programFile);
 	    ifstream sdin(programFile);
-	    Serial.print("flags: "); Serial.println(sdin.rdstate(), HEX);
+	    Serial.print("flags: "); Serial.println(sdin.rdstate());
 	    const int line_buffer_size = 18;
 	    char buffer[line_buffer_size];
 	}

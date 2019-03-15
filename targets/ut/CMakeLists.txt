@@ -31,7 +31,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAK
 
 target_include_directories(${PROJECT_NAME} PRIVATE 
       ${PROJECT_ROOT}/googletest/googletest/include 
-      ${STUBS_DIR} 
+      ${STUBS_DIR}
       ${SRC_DIR} 
       ${ARDUINO_PATH}/hardware/arduino/avr/cores/arduino
       #${ACCELEROMETER_DIR} 

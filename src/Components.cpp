@@ -1,6 +1,7 @@
 
 #include "Components.h"
 #include "Pins.h"
+#include "Arduino.h"
 
 using namespace stamping;
 
