@@ -14,7 +14,10 @@ public:
 	virtual ~Program() {}
 	size_t printTo(Print& p) const;
 	void addPhase(Output const o);
+	void insertPhase(unsigned index, Output const o);
+	void insert(unsigned index, const Program&);
 	void run();
+	int length() const;
 	const Actuator& actuator(const int) const; // testability
 private:
 	Phases phases;

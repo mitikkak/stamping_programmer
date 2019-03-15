@@ -80,6 +80,21 @@ void Program::run()
 		actor.off();
 	}
 }
+void Program::insertPhase(unsigned index, Output const o)
+{
+	phases.insert(index, o);
+}
+void Program::insert(unsigned index, const Program& another)
+{
+	for (int i = 0; i < another.length(); i++)
+	{
+		phases.insert(index+i, another.phases[i]);
+	}
+}
+int Program::length() const
+{
+	return phases.size();
+}
 #ifdef UNIT_TEST
 #include <cassert>
 const Actuator& Program::actuator(const int idx) const

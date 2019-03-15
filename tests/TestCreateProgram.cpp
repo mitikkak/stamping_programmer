@@ -45,6 +45,81 @@ TEST_F(TestCreateProgram, twoPhases)
 	program.printTo(printer);
 	EXPECT_STREQ("[4:13][2:20000]", printer.output());
 }
+TEST_F(TestCreateProgram, insertPhaseInMiddle)
+{
+	Actuators actuators;
+	Program program(actuators);
+	SerialPrinter printer;
+	program.addPhase(Output(15, 2222));
+	program.addPhase(Output(20, 3333));
+	program.insertPhase(1, Output(44, 4466));
+	program.printTo(printer);
+	EXPECT_STREQ("[15:2222][44:4466][20:3333]", printer.output());
+}
+TEST_F(TestCreateProgram, insertPhaseInHead)
+{
+	Actuators actuators;
+	Program program(actuators);
+	SerialPrinter printer;
+	program.addPhase(Output(15, 2222));
+	program.addPhase(Output(20, 3333));
+	program.insertPhase(0, Output(44, 4466));
+	program.printTo(printer);
+	EXPECT_STREQ("[44:4466][15:2222][20:3333]", printer.output());
+}
+TEST_F(TestCreateProgram, insertPhaseInTail)
+{
+	Actuators actuators;
+	Program program(actuators);
+	SerialPrinter printer;
+	program.addPhase(Output(15, 2222));
+	program.addPhase(Output(20, 3333));
+	program.insertPhase(99, Output(44, 4466));
+	program.printTo(printer);
+	EXPECT_STREQ("[15:2222][20:3333][44:4466]", printer.output());
+}
+TEST_F(TestCreateProgram, insertProgramInMiddle)
+{
+	Actuators actuators;
+	Program program(actuators);
+	SerialPrinter printer;
+	program.addPhase(Output(15, 2222));
+	program.addPhase(Output(20, 3333));
+	Program program2(actuators);
+	program2.insertPhase(56, Output(44, 4466));
+	program2.insertPhase(56, Output(55, 5577));
+	program.insert(1, program2);
+	program.printTo(printer);
+	EXPECT_STREQ("[15:2222][44:4466][55:5577][20:3333]", printer.output());
+}
+TEST_F(TestCreateProgram, insertProgramInHead)
+{
+	Actuators actuators;
+	Program program(actuators);
+	SerialPrinter printer;
+	program.addPhase(Output(15, 2222));
+	program.addPhase(Output(20, 3333));
+	Program program2(actuators);
+	program2.insertPhase(56, Output(44, 4466));
+	program2.insertPhase(56, Output(55, 5577));
+	program.insert(0, program2);
+	program.printTo(printer);
+	EXPECT_STREQ("[44:4466][55:5577][15:2222][20:3333]", printer.output());
+}
+TEST_F(TestCreateProgram, insertProgramInTail)
+{
+	Actuators actuators;
+	Program program(actuators);
+	SerialPrinter printer;
+	program.addPhase(Output(15, 2222));
+	program.addPhase(Output(20, 3333));
+	Program program2(actuators);
+	program2.insertPhase(56, Output(44, 4466));
+	program2.insertPhase(56, Output(55, 5577));
+	program.insert(43, program2);
+	program.printTo(printer);
+	EXPECT_STREQ("[15:2222][20:3333][44:4466][55:5577]", printer.output());
+}
 TEST_F(TestCreateProgram, loadProgram)
 {
 	Actuators actuators;
