@@ -2,7 +2,9 @@
 #include "Buttons.h"
 #include "Arduino.h"
 #include "Pins.h"
+#ifndef ESP8266
 #include "PinChangeInt.h"
+#endif
 
 namespace stamping
 {
@@ -29,14 +31,17 @@ void Buttons::backButtonCB()
 }
 void Buttons::init()
 {
+#ifndef ESP8266
     pinMode(upPin, INPUT_PULLUP);
-    attachPinChangeInterrupt(upPin, upButtonCB, RISING);
     pinMode(downPin, INPUT_PULLUP);
-    attachPinChangeInterrupt(downPin, downButtonCB, RISING);
     pinMode(selectPin, INPUT_PULLUP);
-    attachPinChangeInterrupt(selectPin, selectButtonCB, RISING);
     pinMode(backPin, INPUT_PULLUP);
+    attachPinChangeInterrupt(downPin, downButtonCB, RISING);
+    attachPinChangeInterrupt(upPin, upButtonCB, RISING);
+    attachPinChangeInterrupt(selectPin, selectButtonCB, RISING);
     attachPinChangeInterrupt(backPin, backButtonCB, RISING);
+#else
+#endif
 }
 bool Buttons::touched() const
 {

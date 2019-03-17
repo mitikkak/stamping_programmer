@@ -8,12 +8,12 @@ namespace stamping
 {
 
 Program::Program(Actuators& actors)
-: actuators{actors}
+: actuators(actors)
 {
 
 }
 Program::Program(Actuators& actors, const char* const savedProgram)
-: actuators{actors}
+: actuators(actors)
 {
 	const int length = strlen(savedProgram);
     STRING_TYPE lineStr;

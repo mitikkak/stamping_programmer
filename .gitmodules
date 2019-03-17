@@ -10,3 +10,6 @@
 [submodule "PinChangeInt"]
 	path = PinChangeInt
 	url = https://github.com/GreyGnome/PinChangeInt
+[submodule "LiquidCrystal_I2C"]
+	path = LiquidCrystal_I2C
+	url = https://github.com/marcoschwartz/LiquidCrystal_I2C.git

@@ -11,7 +11,7 @@ public:
 struct Selection
 {
     Selection(const char* const n, Runnable& r)
-    : name{n}, runner{r}
+    : name{n}, runner(r)
     {}
     void run() const
     {
@@ -38,11 +38,14 @@ class CreateProgram : public Runnable
 public:
 	void run()
 	{
+#ifdef ESP8266
+#else
 	    Serial.println("Avataan: ");Serial.println(programFile);
 	    ifstream sdin(programFile);
 	    Serial.print("flags: "); Serial.println(sdin.rdstate());
 	    const int line_buffer_size = 18;
 	    char buffer[line_buffer_size];
+#endif
 	}
 };
 
@@ -97,6 +100,9 @@ Selections selections;
 
 void loop()
 {
+#ifdef ESP8266
+    server.handleClient();
+#else
     if (buttons.touched())
     {
         if (buttons.up())
@@ -114,4 +120,5 @@ void loop()
         selections.show();
         buttons.clear();
     }
+#endif
 }

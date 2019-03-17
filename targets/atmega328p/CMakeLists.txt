@@ -9,9 +9,8 @@ include(${ARDUINO_CMAKE_DIR}/atmega328/libs.cmake)
 include(${ARDUINO_CMAKE_DIR}/atmega328/deploy.cmake)
 
 set(ARDUINO_PINS ${ARDUINO_PATH}/hardware/arduino/avr/variants/standard)
-#set(ARDUINO_LCD_SRC ${ARDUINO_PATH}/libraries/LiquidCrystal/src/)
 
-set(external_sources ${SDFAT_DIR}/FatLib/FatFile.cpp
+set(ext_sources ${SDFAT_DIR}/FatLib/FatFile.cpp
     ${SDFAT_DIR}/FatLib/FatFileLFN.cpp
     #${SDFAT_DIR}/FatLib/FatFilePrint.cpp
     #${SDFAT_DIR}/FatLib/FatFileSFN.cpp
@@ -31,8 +30,10 @@ set(external_sources ${SDFAT_DIR}/FatLib/FatFile.cpp
     #${SDFAT_DIR}/SpiDriver/SdSpiSAM3X.cpp
     #${SDFAT_DIR}/SpiDriver/SdSpiSTM32.cpp
     #${SDFAT_DIR}/SpiDriver/SdSpiTeensy3.cpp
+    ${IIC_LCD_SRC}/LiquidCrystal_I2C.cpp
 )
-add_executable(${PROJECT_NAME} ${product_sources} ${external_sources} ${arduino_spi_sources} ${atmega328_core_sources})
+
+add_executable(${PROJECT_NAME} ${product_sources} ${ext_sources} ${arduino_spi_sources} ${arduino_wire_sources} ${atmega328_core_sources})
 target_link_libraries(${PROJECT_NAME} ${atmega328_linker_options})
 target_compile_options(
     ${PROJECT_NAME} PRIVATE
@@ -46,9 +47,8 @@ target_include_directories(
     ${PIN_CHANGE_INT_DIR}
     ${SDFAT_DIR}
     ${ARDUINO_SPI_SRC}
-    #${ARDUINO_LCD_SRC}
-    #${IIC_LCD_SRC}
-    #${ARDUINO_WIRE_SRC}
+    ${ARDUINO_WIRE_SRC}
+    ${IIC_LCD_SRC}
 )
 
 upload_atmega328(${PROJECT_NAME} ${PROJECT_NAME})
