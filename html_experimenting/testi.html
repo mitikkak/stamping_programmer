@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sarmarin ohjaus</title>
+<style>.button1{background-color: #990033;border: none;color: white;padding: 7px 15px;text-align: center;cursor: pointer;}</style>
+<style>.button2{background-color: #40150133;border: none;color: white;padding: 10px 30px;text-align: center;}</style>
+</head>
+<body>
+<form method="post" action="/createProgram" >
+Uusi ohjelma:<br><input name="line" type="text" size="16000" value="" ><br><br>
+<input type="submit" name="clk_action" value="Luo ohjelma">
+</form>
+<form method="post" action="example.html" >
+<input type="submit" name="clk_action" value="wifi">
+</form>
+<form method="post" action="openProgram">
+<br><button id=\"openProgram\">Avaa ohjelma</button>
+</form>
+<form method="post" action="deleteAllPrograms">
+<br><button id=\"deleteAllPrograms\">Poista kaikki ohjelmat</button>
+</form>
+<a href="/javascript">Javascript code</a>
+</br>
+<script type="text/javascript" src="simplemethods.js"> </script>
+</br>
+<p>Click the button to get a message from the ESP8266:</p>
+<button onclick="buttonFunction()">Message</button> 
+<script type="text/javascript" src="buttonFunc.js"> </script>
+<input type="button" class="button1" value="Input Button" onclick="buttonFunction()">
+<input type="button" class="button2" value="Input Button" onclick="buttonFunction()">
+</body>
+</html>
+
