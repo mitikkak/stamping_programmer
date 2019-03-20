@@ -14,7 +14,7 @@ static const int a4Pin{9};
 static const int sdSelectPin{10};
 #else
 static const int a1Pin{15};
-static const int a2Pin{14};
+static const int a2Pin{2};
 static const int a3Pin{13};
 static const int a4Pin{12};
 //static const int sdSelectPin{2};

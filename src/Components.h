@@ -12,6 +12,7 @@
 #include "ESP8266WebServer.h"
 #include "FS.h"
 #endif
+#include "Verification.h"
 
 extern stamping::Buttons buttons;
 extern stamping::Actuator a1;

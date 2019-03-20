@@ -29,14 +29,14 @@ static const char INDEX_HEAD_HTML[] = R"rawliteral(
 )rawliteral";
 static const char INDEX_MIDDLE_HTML[] = R"rawliteral(
 <form method="post" action="/createProgram" >
-Uusi ohjelma:<br><input name="line" type="text" size="16000" value="" ><br><br>
+<p><span style="font-size:24px;"><strong>Luo ohjelma:</strong></span></p>
+<br><input name="line" type="text" size="16000" value="" ><br><br>
 <input type="submit" name="clk_action" value="Luo ohjelma">
 </form>
-<form method="post" action="/example" >
-<input type="submit" name="clk_action" value="wifi">
-</form>
 <form method="post" action="openProgram">
-<br><button id=\"openProgram\">Avaa ohjelma</button>
+<p><span style="font-size:24px;"><strong>Aja ohjelma:</strong></span></p>
+<br><input name="line" type="text" size="1" value="" ><br><br>
+<input type="submit" name="clk_action" value="Aja ohjelma">
 </form>
 <form method="post" action="deleteAllPrograms">
 <br><button id=\"deleteAllPrograms\">Poista kaikki ohjelmat</button>
@@ -48,9 +48,59 @@ static const char INDEX_TAIL_HTML[] = R"rawliteral(
 )rawliteral";
 
 //---------------------------------------------------------
+
+//int const numOfPrograms{3};
+//String programStr[numOfPrograms] = {
+//         "[1:200][3:300][2:9000][1:2344]"
+//        ,"[2:1200][1:1300][2:5000][1:24]"
+//        ,"[1:35200][1:457300]"
+//};
+struct Programs
+{
+    Programs(unsigned int n, const String& s)
+    : numOf{n},
+      strValue{s}
+    {}
+    void init()
+    {
+        numOf = 0;
+        strValue = "";
+    }
+    unsigned int numOf{0};
+    String strValue{""};
+};
+const Programs noPrograms(1, "Ei ohjelmia");
+const Programs fileOpenFailed(1, "Ohjelmien luku epäonnistui!");
+
+void getPrograms(Programs& progs)
+{
+    if (not SPIFFS.exists(programFile))
+    {
+        progs = noPrograms;
+        return;
+    }
+    File file = SPIFFS.open(programFile, "r");
+    if (!file)
+    {
+        progs = fileOpenFailed;
+        return;
+    }
+    progs.init();
+    for(int i=0;i<file.size();i++)
+    {
+        const char c = (char)file.read();
+        if (c == '\n')
+        {
+            progs.numOf++;
+        }
+        progs.strValue += c;
+    }
+    file.close();
+}
 int constexpr htmlResponseSize{3000};
 int constexpr programMaxLength{1000};
 char htmlResponse[htmlResponseSize]{};
+Programs progs(0, "");
 void handleRoot() {
   memset(htmlResponse, 0, sizeof(htmlResponseSize));
   int writtenBytes = snprintf(&htmlResponse[0], sizeof(INDEX_HEAD_HTML), INDEX_HEAD_HTML);
@@ -58,10 +108,16 @@ void handleRoot() {
   writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(INDEX_MIDDLE_HTML), INDEX_MIDDLE_HTML);
   Serial.print("sendResp: "); Serial.println(writtenBytes);
   //
-  String programs = "<p><textarea cols=\"";
-  programs += String(programMaxLength);
-  programs += "\" name=\"Ohjelmat\" rows=\"10\">dfsdf</textarea></p>";
-  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], programs.length(), programs.c_str());
+  getPrograms(progs);
+  String htmlRespProgramsStr = "<p><span style=\"font-size:24px;\"><strong>Ohjelmat:</strong></span></p>";
+  htmlRespProgramsStr += "<p><textarea cols=\"";
+  htmlRespProgramsStr += String(programMaxLength);
+  htmlRespProgramsStr += "\" name=\"Ohjelmat\" rows=\"";
+  htmlRespProgramsStr += String(progs.numOf);
+  htmlRespProgramsStr += "\">";
+  htmlRespProgramsStr += progs.strValue;
+  htmlRespProgramsStr += "</textarea></p>";
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], htmlRespProgramsStr.length(), htmlRespProgramsStr.c_str());
   Serial.print("sendResp: "); Serial.println(writtenBytes);
   writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(INDEX_TAIL_HTML), INDEX_TAIL_HTML);
   Serial.print("sendResp: "); Serial.println(writtenBytes);
@@ -72,26 +128,36 @@ void handleCreateProgram() {
   String str = "Tallennetaan ohjelma ...\r\n";
   if (server.args() == 2 )
   {
-      File file = SPIFFS.open(programFile, "a+");
-      if (!file) {
-        str += "Tiedoston luonti epäonnistui! \n";
+      String const lineStr = server.arg(0);
+      const Verification verification(lineStr);
+      if (lineStr == "")
+      {
+          str += "Tyhjä ohjelma, ei talleteta!";
+      }
+      else if (not verification.passed())
+      {
+          str += "Virhe syötteessä!";
       }
       else
       {
-          String const lineStr = server.arg(0);
-          //String const periodStr = server.arg(1);
-          String const endLineStr = "\n";
-          Serial.print("Line: "); Serial.println(lineStr);
-          //Serial.print("Period: "); Serial.println(periodStr);
-//          uint8_t buf[] = "[1:1234][2:2345][3:3456]\n";
-          size_t writtenBytes = file.write((const uint8_t*)(lineStr.c_str()), lineStr.length());
-          //writtenBytes += file.write((const uint8_t*)(periodStr.c_str()), periodStr.length());
-          writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
-          str += "Kirjoitettu: ";
-          str += writtenBytes;
-          str += " tavua \n";
+          File file = SPIFFS.open(programFile, "a+");
+          if (!file) {
+              str += "Tiedoston luonti epäonnistui! \n";
+          }
+          else
+          {
+              String const endLineStr = "\n";
+              Serial.print("Line: "); Serial.println(lineStr);
+              size_t writtenBytes = file.write((const uint8_t*)(lineStr.c_str()), lineStr.length());
+              writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
+              str += String(verification.numOfPhases);
+              str += " vaihetta. \n";
+              str += "Kirjoitettu: ";
+              str += writtenBytes;
+              str += " tavua \n";
+          }
+          file.close();
       }
-      file.close();
   }
   else
   {
@@ -147,6 +213,9 @@ void handleNotFound() {
   server.send(404, "text/plain", "Sivua ei ole!");
 }
 #endif
+
+const char* ssid = "sarmari_ap";
+const char* password = "abba_acdc";
 void setup()
 {
     Serial.begin(115200);
@@ -161,8 +230,7 @@ void setup()
     lcd.clear();
     lcd.setCursor(0,0);
     //WiFi.begin(ssid, password);
-    const char ssid[] = "sarmari_ap";
-    WiFi.softAP(ssid);
+    WiFi.softAP(ssid, password);
     lcd.print(ssid);
     lcd.setCursor(0,1);
     lcd.print("IP: ");

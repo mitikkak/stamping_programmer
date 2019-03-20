@@ -20,6 +20,7 @@ Actuator::Actuator(const int pin, const int state)
 void Actuator::start() const
 {
 	pinMode(pin_, OUTPUT);
+	off();
 }
 void Actuator::on() const
 {
