@@ -38,6 +38,11 @@ static const char INDEX_MIDDLE_HTML[] = R"rawliteral(
 <br><input name="line" type="text" size="1" value="" ><br><br>
 <input type="submit" name="clk_action" value="Aja ohjelma">
 </form>
+<form method="post" action="deleteProgram">
+<p><span style="font-size:24px;"><strong>Poista ohjelma:</strong></span></p>
+<br><input name="line" type="text" size="1" value="" ><br><br>
+<input type="submit" name="clk_action" value="Poista ohjelma">
+</form>
 <form method="post" action="deleteAllPrograms">
 <br><button id=\"deleteAllPrograms\">Poista kaikki ohjelmat</button>
 )rawliteral";
@@ -48,13 +53,6 @@ static const char INDEX_TAIL_HTML[] = R"rawliteral(
 )rawliteral";
 
 //---------------------------------------------------------
-
-//int const numOfPrograms{3};
-//String programStr[numOfPrograms] = {
-//         "[1:200][3:300][2:9000][1:2344]"
-//        ,"[2:1200][1:1300][2:5000][1:24]"
-//        ,"[1:35200][1:457300]"
-//};
 struct Programs
 {
     Programs(unsigned int n, const String& s)
@@ -85,15 +83,21 @@ void getPrograms(Programs& progs)
         progs = fileOpenFailed;
         return;
     }
+    Serial.print("file size: "); Serial.println(file.size());
     progs.init();
+    progs.strValue += String("1: ");
     for(int i=0;i<file.size();i++)
     {
         const char c = (char)file.read();
+        progs.strValue += c;
         if (c == '\n')
         {
             progs.numOf++;
+            if (i < file.size()-1)
+            {
+                progs.strValue += String(progs.numOf+1) + String(": ");
+            }
         }
-        progs.strValue += c;
     }
     file.close();
 }
@@ -101,6 +105,14 @@ int constexpr htmlResponseSize{3000};
 int constexpr programMaxLength{1000};
 char htmlResponse[htmlResponseSize]{};
 Programs progs(0, "");
+const String noProgramsStr("Ei ohjelmia!");
+const String wrongParamsStr("Väärät parametrit!");
+const String inputErrorStr("Väärä syöte!");
+const String fileOpenErrorStr("Tiedoston aukaisu ei toimi!");
+const String cannotFindProgramStr("Ohjelmaa ei löydy!");
+const String fileRemoveFailureStr("Ohjelman poisto ei onnistunut!");
+const String fileCreateFailureStr("Ohjelman luonti ei onnistunut!");
+
 void handleRoot() {
   memset(htmlResponse, 0, sizeof(htmlResponseSize));
   int writtenBytes = snprintf(&htmlResponse[0], sizeof(INDEX_HEAD_HTML), INDEX_HEAD_HTML);
@@ -124,6 +136,14 @@ void handleRoot() {
   Serial.println(htmlResponse);
   server.send(200, "text/html", htmlResponse);
 }
+size_t saveProgram(File& file, const String& content)
+{
+    String const endLineStr = "\n";
+    Serial.print("Line: "); Serial.println(content);
+    size_t writtenBytes = file.write((const uint8_t*)(content.c_str()), content.length());
+    writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
+    return writtenBytes;
+}
 void handleCreateProgram() {
   String str = "Tallennetaan ohjelma ...\r\n";
   if (server.args() == 2 )
@@ -142,14 +162,11 @@ void handleCreateProgram() {
       {
           File file = SPIFFS.open(programFile, "a+");
           if (!file) {
-              str += "Tiedoston luonti epäonnistui! \n";
+              str += fileCreateFailureStr;
           }
           else
           {
-              String const endLineStr = "\n";
-              Serial.print("Line: "); Serial.println(lineStr);
-              size_t writtenBytes = file.write((const uint8_t*)(lineStr.c_str()), lineStr.length());
-              writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
+              size_t const writtenBytes = saveProgram(file, lineStr);
               str += String(verification.numOfPhases);
               str += " vaihetta. \n";
               str += "Kirjoitettu: ";
@@ -161,7 +178,7 @@ void handleCreateProgram() {
   }
   else
   {
-      str += "Väärät parametrit!";
+      str += wrongParamsStr;
   }
 
   server.send(200, "text/plain", str.c_str());
@@ -191,8 +208,93 @@ void handleOpenProgram() {
     }
     else
     {
-        str += "Ei ohjelmia! \n";
+        str += noProgramsStr;
     }
+    server.send(200, "text/plain", str.c_str());
+}
+void printFileToSerial(File& file)
+{
+    Serial.print("File size: "); Serial.println(file.size());
+    for(int i=0;i<file.size();i++)
+    {
+        Serial.print("["); Serial.print(i); Serial.print("]: "); Serial.println((char) file.read());
+    }
+}
+void handleDeleteProgram()
+{
+    if (server.args() != 2 )
+    {
+        server.send(200, "text/plain", wrongParamsStr);
+        return;
+    }
+    if (not SPIFFS.exists(programFile))
+    {
+        server.send(200, "text/plain", noProgramsStr);
+        return;
+    }
+    const int line = atoi(server.arg(0).c_str()) - 1;
+    Serial.print("Poistetaan ohjelma rivi: "); Serial.println(line);
+    if (line < 0)
+    {
+        server.send(200, "text/plain", inputErrorStr);
+        return;
+    }
+    File file = SPIFFS.open(programFile, "r+");
+    if (not file)
+    {
+        server.send(200, "text/plain", fileOpenErrorStr);
+        return;
+    }
+    printFileToSerial(file);
+    file.seek(0);
+    String newContent = "";
+    for(int i=0, atLine = 0;i<file.size() and atLine < line;i++)
+    {
+        const char c = (char)file.read();
+        Serial.print(c); Serial.print(", fpos: "); Serial.println(file.position());
+        newContent += c;
+        if (c == '\n')
+        {
+            atLine++;
+        }
+    }
+    Serial.print("final fpos: "); Serial.println(file.position());
+    if (file.position() >= file.size())
+    {
+        server.send(200, "text/plain", cannotFindProgramStr);
+        return;
+    }
+    Serial.println("skipataan rivi");
+    file.readStringUntil('\n');
+    Serial.println("Luetaan loput");
+    while (file.position() < file.size())
+    {
+        const char c = (char)file.read();
+        Serial.print(c); Serial.print(", fpos: "); Serial.println(file.position());
+        newContent += c;
+    }
+    Serial.print("Uusi: "); Serial.print(newContent.length());
+    Serial.println(newContent);
+    file.close();
+    bool const fileDeleteSuccessful = SPIFFS.remove(programFile);
+    if (not fileDeleteSuccessful)
+    {
+        server.send(200, "text/plain", fileRemoveFailureStr.c_str());
+        return;
+    }
+    bool const emptyContent = (newContent.length() == 0);
+    if (not emptyContent)
+    {
+        Serial.println("luodaan uusi");
+        file = SPIFFS.open(programFile, "a+");
+        if (!file) {
+            server.send(200, "text/plain", fileCreateFailureStr.c_str());
+            return;
+        }
+    }
+    saveProgram(file, newContent);
+    file.close();
+    String str = "Poistettu ohjelma nro " + String(line);
     server.send(200, "text/plain", str.c_str());
 }
 void handleDeleteAllPrograms()
@@ -205,7 +307,7 @@ void handleDeleteAllPrograms()
     }
     else
     {
-        str += "Ei onnistunut!";
+        str += fileRemoveFailureStr;
     }
     server.send(200, "text/plain", str.c_str());
 }
@@ -215,7 +317,7 @@ void handleNotFound() {
 #endif
 
 const char* ssid = "sarmari_ap";
-const char* password = "abba_acdc";
+const char* password = "mutiainen";
 void setup()
 {
     Serial.begin(115200);
@@ -238,6 +340,7 @@ void setup()
     server.on("/", handleRoot);
     server.on("/createProgram", handleCreateProgram);
     server.on("/openProgram", handleOpenProgram);
+    server.on("/deleteProgram", handleDeleteProgram);
     server.on("/deleteAllPrograms", handleDeleteAllPrograms);
     server.onNotFound(handleNotFound);
     server.begin();
