@@ -90,10 +90,12 @@ void getPrograms(Programs& progs)
     {
         const char c = (char)file.read();
         progs.strValue += c;
-        if (c == '\n')
+        Serial.print(c);Serial.print(" i: "); Serial.print(i); Serial.print("/"); Serial.println(file.size());
+        bool const nonLastByte = (i < file.size()-1);
+        if (c == '\n' and nonLastByte)
         {
             progs.numOf++;
-            if (i < file.size()-1)
+            if (nonLastByte)
             {
                 progs.strValue += String(progs.numOf+1) + String(": ");
             }
@@ -138,17 +140,16 @@ void handleRoot() {
 }
 size_t saveProgram(File& file, const String& content)
 {
-    String const endLineStr = "\n";
     Serial.print("Line: "); Serial.println(content);
     size_t writtenBytes = file.write((const uint8_t*)(content.c_str()), content.length());
-    writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
+    //writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
     return writtenBytes;
 }
 void handleCreateProgram() {
   String str = "Tallennetaan ohjelma ...\r\n";
   if (server.args() == 2 )
   {
-      String const lineStr = server.arg(0);
+      String lineStr = server.arg(0);
       stamping::Verification verification;
       verification.check(lineStr, actuators);
       if (lineStr == "")
@@ -167,6 +168,8 @@ void handleCreateProgram() {
           }
           else
           {
+//              String const endLineStr = "\n";
+              lineStr += "\n";
               size_t const writtenBytes = saveProgram(file, lineStr);
               str += String(verification.numOfPhases);
               str += " vaihetta. \n";
@@ -233,9 +236,9 @@ void handleDeleteProgram()
         server.send(200, "text/plain", noProgramsStr);
         return;
     }
-    const int line = atoi(server.arg(0).c_str()) - 1;
-    Serial.print("Poistetaan ohjelma rivi: "); Serial.println(line);
-    if (line < 0)
+    const int lineIndex = atoi(server.arg(0).c_str()) - 1;
+    Serial.print("Poistetaan ohjelma rivi: "); Serial.println(lineIndex+1);
+    if (lineIndex < 0)
     {
         server.send(200, "text/plain", inputErrorStr);
         return;
@@ -249,7 +252,7 @@ void handleDeleteProgram()
     printFileToSerial(file);
     file.seek(0);
     String newContent = "";
-    for(int i=0, atLine = 0;i<file.size() and atLine < line;i++)
+    for(int i=0, atLine = 0;i<file.size() and atLine < lineIndex;i++)
     {
         const char c = (char)file.read();
         Serial.print(c); Serial.print(", fpos: "); Serial.println(file.position());
@@ -267,11 +270,12 @@ void handleDeleteProgram()
     }
     Serial.println("skipataan rivi");
     file.readStringUntil('\n');
-    Serial.println("Luetaan loput");
+    Serial.print("Luetaan loput: "); Serial.print(file.position());Serial.print("=");Serial.println(file.peek());
     while (file.position() < file.size())
     {
+        Serial.print("fpos: "); Serial.print(file.position());
         const char c = (char)file.read();
-        Serial.print(c); Serial.print(", fpos: "); Serial.println(file.position());
+        Serial.print("= "); Serial.println(c);
         newContent += c;
     }
     Serial.print("Uusi: "); Serial.print(newContent.length());
@@ -295,7 +299,7 @@ void handleDeleteProgram()
     }
     saveProgram(file, newContent);
     file.close();
-    String str = "Poistettu ohjelma nro " + String(line);
+    String str = "Poistettu ohjelma nro " + String(lineIndex+1);
     server.send(200, "text/plain", str.c_str());
 }
 void handleDeleteAllPrograms()
