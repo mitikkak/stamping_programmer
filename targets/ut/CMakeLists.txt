@@ -6,6 +6,7 @@ set(test_sources
              ${ARDUINO_CMAKE_DIR}/ut/Runner.cpp
              ${TEST_SRC_DIR}/TestCreateProgram.cpp
              ${TEST_SRC_DIR}/TestRunProgram.cpp
+             ${TEST_SRC_DIR}/TestVerification.cpp
 )
 
 set(stub_sources 

@@ -18,6 +18,7 @@ set(product_sources ${SRC_DIR}/Loop.cpp
         ${SRC_DIR}/Actuators.cpp
         ${SRC_DIR}/Output.cpp
         ${SRC_DIR}/Buttons.cpp
+        ${SRC_DIR}/Verification.cpp
 )
 
 add_subdirectory(${PROJECT_ROOT}/googletest)

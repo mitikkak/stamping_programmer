@@ -149,7 +149,8 @@ void handleCreateProgram() {
   if (server.args() == 2 )
   {
       String const lineStr = server.arg(0);
-      const Verification verification(lineStr);
+      stamping::Verification verification;
+      verification.check(lineStr, actuators);
       if (lineStr == "")
       {
           str += "Tyhjä ohjelma, ei talleteta!";

@@ -17,11 +17,11 @@ public:
 
     }
     void SetUp(){
-    	receivedEvents.start();
     	actuators.add(a1);
     	actuators.add(a2);
     	actuators.add(a3);
     	actuators.add(a4);
+    	receivedEvents.start();
     }
 
     void TearDown() {
