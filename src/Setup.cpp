@@ -43,96 +43,219 @@ static const char INDEX_MIDDLE_HTML[] = R"rawliteral(
 <br><input name="line" type="text" size="1" value="" ><br><br>
 <input type="submit" name="clk_action" value="Poista ohjelma">
 </form>
-<form method="post" action="deleteAllPrograms">
-<br><button id=\"deleteAllPrograms\">Poista kaikki ohjelmat</button>
 )rawliteral";
 static const char INDEX_TAIL_HTML[] = R"rawliteral(
+<form method="post" action="deleteAllPrograms">
+<br><button id=\"deleteAllPrograms\">Poista kaikki ohjelmat</button>
 </form>
 </body>
 </html>
 )rawliteral";
 
 //---------------------------------------------------------
-struct Programs
-{
-    Programs(unsigned int n, const String& s)
-    : numOf{n},
-      strValue{s}
-    {}
-    void init()
-    {
-        numOf = 0;
-        strValue = "";
-    }
-    unsigned int numOf{0};
-    String strValue{""};
-};
-const Programs noPrograms(1, "Ei ohjelmia");
-const Programs fileOpenFailed(1, "Ohjelmien luku epäonnistui!");
+const char noProgramsStr[] = "Ei ohjelmia";
+const char fileOpenFailedStr[] = "Ohjelmien luku epaonnistui!";
 
-void getPrograms(Programs& progs)
+unsigned int numOfPrograms{0};
+int constexpr programMaxLength{300};
+int constexpr maxNumOfPrograms{5};
+int constexpr programsMessageAreaSize{programMaxLength*maxNumOfPrograms};
+char programsMessageArea[programsMessageAreaSize];
+char itoaBuffer[33];
+void getPrograms()
 {
+    numOfPrograms = 1;
     if (not SPIFFS.exists(programFile))
     {
-        progs = noPrograms;
+        snprintf(programsMessageArea, sizeof(noProgramsStr), noProgramsStr);
         return;
     }
     File file = SPIFFS.open(programFile, "r");
     if (!file)
     {
-        progs = fileOpenFailed;
+        snprintf(programsMessageArea, sizeof(fileOpenFailedStr), fileOpenFailedStr);
         return;
     }
     Serial.print("file size: "); Serial.println(file.size());
-    progs.init();
-    progs.strValue += String("1: ");
+    const char firstItemHeader[] = "1: ";
+    int writtenBytes{0};
+    writtenBytes += snprintf(programsMessageArea, sizeof(firstItemHeader), firstItemHeader);
     for(int i=0;i<file.size();i++)
     {
         const char c = (char)file.read();
-        progs.strValue += c;
+        programsMessageArea[writtenBytes-1] = c;
+        writtenBytes++;
         Serial.print(c);Serial.print(" i: "); Serial.print(i); Serial.print("/"); Serial.println(file.size());
         bool const nonLastByte = (i < file.size()-1);
         if (c == '\n' and nonLastByte)
         {
-            progs.numOf++;
+            numOfPrograms++;
             if (nonLastByte)
             {
-                progs.strValue += String(progs.numOf+1) + String(": ");
+                itoa(numOfPrograms, itoaBuffer, 10);
+                writtenBytes += snprintf(&programsMessageArea[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+                const char headerSeparator[] = ": ";
+                writtenBytes += snprintf(&programsMessageArea[writtenBytes-1], sizeof(headerSeparator), headerSeparator);
             }
         }
     }
     file.close();
 }
+String const settingsFile = "/asetukset.txt";
+int constexpr defaultDelay{10};
+struct Settings
+{
+    int delay{defaultDelay};
+};
+int constexpr sizeOfSettingsReadArea{33};
+char settingsReadArea[sizeOfSettingsReadArea];
+void getSettings(Settings& settings)
+{
+    if (not SPIFFS.exists(settingsFile))
+    {
+        return;
+    }
+    File file = SPIFFS.open(settingsFile, "r");
+    if (!file)
+    {
+        return;
+    }
+    memset(settingsReadArea, 0, sizeof(settingsReadArea));
+    for(int i=0;i<file.size();i++)
+    {
+        settingsReadArea[i] = (char)file.read();
+    }
+    settings.delay = atoi(settingsReadArea);
+    file.close();
+}
+const String settingsRemoveFailureStr("Vanhojen asetusten poisto ei onnistunut!");
+const String settingsCreateFailureStr("Asetusten tallennus ei onnistunut!");
+const String wrongParamsStr("Vaarat parametrit!");
+bool removeOldSettings()
+{
+    bool retValue{false};
+    if (not SPIFFS.exists(settingsFile))
+    {
+        retValue = true;
+    }
+    else
+    {
+        retValue = SPIFFS.remove(settingsFile);
+    }
+    return retValue;
+}
+void handleConfigureSettings()
+{
+    String str = "Tallennetaan asetukset ...\n";
+    if (server.args() == 2 )
+    {
+        const String inputStr = server.arg(0);
+        if (inputStr == "")
+        {
+            str += "Tyhja syote, ei talleteta!";
+        }
+        else
+        {
+            bool const retValue = removeOldSettings();
+            if (not retValue)
+            {
+                str += settingsRemoveFailureStr;
+            }
+            else
+            {
+                File file = SPIFFS.open(settingsFile, "a+");
+                if (!file) {
+                    str += settingsCreateFailureStr;
+                }
+                else
+                {
+                    file.write((const uint8_t*)(inputStr.c_str()), inputStr.length());
+                    str += inputStr;
+                    str += " ok! \n";
+                }
+                file.close();
+            }
+        }
+    }
+    else
+    {
+        str += wrongParamsStr;
+    }
+    server.send(200, "text/plain", str.c_str());
+}
 int constexpr htmlResponseSize{3000};
-int constexpr programMaxLength{1000};
 char htmlResponse[htmlResponseSize]{};
-Programs progs(0, "");
-const String noProgramsStr("Ei ohjelmia!");
-const String wrongParamsStr("Väärät parametrit!");
-const String inputErrorStr("Väärä syöte!");
+const String noProgramsString("Ei ohjelmia!");
+const String inputErrorStr("Vaara syote!");
 const String fileOpenErrorStr("Tiedoston aukaisu ei toimi!");
 const String cannotFindProgramStr("Ohjelmaa ei löydy!");
 const String fileRemoveFailureStr("Ohjelman poisto ei onnistunut!");
 const String fileCreateFailureStr("Ohjelman luonti ei onnistunut!");
 
+static const char openParagraphBigBoldFont[] = R"rawliteral(<p><span style=\"font-size:24px;\"><strong>)rawliteral";
+static const char closeParagraphBigBoldFont[] = R"rawliteral(</strong></span></p>)rawliteral";
+static const char fsInfoHeading[] = R"rawliteral(Tiedostojen tilan kayttoaste:)rawliteral";
+static const char programsHeading[] = R"rawliteral(Ohjelmat:)rawliteral";
+static const char openParagraph[] = R"rawliteral(<p>)rawliteral";
+static const char closeParagraph[] = R"rawliteral(</p>)rawliteral";
+static const char bytesMsgStr[] = R"rawliteral(tavuja: )rawliteral";
+static const char slashStr[] = R"rawliteral(/)rawliteral";
+static const char textAreaStartAndColumns[] = R"rawliteral(<p><textarea cols=)rawliteral";
+static const char textAreaNameAndRows[] = R"rawliteral( name="Ohjelmat" rows=)rawliteral";
+static const char textAreaRowsCloser[] = R"rawliteral(>)rawliteral";
+static const char textAreaEnd[] = R"rawliteral(</textarea></p>
+)rawliteral";
+static const char settingsHeading[] = R"rawliteral(<form method="post" action="configureSettings">
+<p><span style="font-size:24px;"><strong>Yleiset asetukset:</strong></span></p>)rawliteral";
+static const char currentDelayHeading[] = R"rawliteral(<p>Viive tyovaiheiden valissa: )rawliteral";
+static const char inputDelay[] = R"rawliteral(<br><input name="line" type="text" size="1" value="" ><input type="submit" name="clk_action" value="Aseta viive">)rawliteral";
+static const char endForm[] = R"rawliteral(</form>)rawliteral";
+
 void handleRoot() {
   memset(htmlResponse, 0, sizeof(htmlResponseSize));
+  memset(programsMessageArea, 0, sizeof(programsMessageArea));
   int writtenBytes = snprintf(&htmlResponse[0], sizeof(INDEX_HEAD_HTML), INDEX_HEAD_HTML);
   Serial.print("sendResp: "); Serial.println(writtenBytes);
   writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(INDEX_MIDDLE_HTML), INDEX_MIDDLE_HTML);
   Serial.print("sendResp: "); Serial.println(writtenBytes);
   //
-  getPrograms(progs);
-  String htmlRespProgramsStr = "<p><span style=\"font-size:24px;\"><strong>Ohjelmat:</strong></span></p>";
-  htmlRespProgramsStr += "<p><textarea cols=\"";
-  htmlRespProgramsStr += String(programMaxLength);
-  htmlRespProgramsStr += "\" name=\"Ohjelmat\" rows=\"";
-  htmlRespProgramsStr += String(progs.numOf);
-  htmlRespProgramsStr += "\">";
-  htmlRespProgramsStr += progs.strValue;
-  htmlRespProgramsStr += "</textarea></p>";
-  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], htmlRespProgramsStr.length(), htmlRespProgramsStr.c_str());
-  Serial.print("sendResp: "); Serial.println(writtenBytes);
+  Settings settings;
+  getSettings(settings);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(settingsHeading), settingsHeading);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(currentDelayHeading), currentDelayHeading);
+  itoa(settings.delay, itoaBuffer, 10);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraph), closeParagraph);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(inputDelay), inputDelay);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(endForm), endForm);
+
+  getPrograms();
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(openParagraphBigBoldFont), openParagraphBigBoldFont);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(programsHeading), programsHeading);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraphBigBoldFont), closeParagraphBigBoldFont);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(textAreaStartAndColumns), textAreaStartAndColumns);
+  itoa(programMaxLength, itoaBuffer, 10);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(textAreaNameAndRows), textAreaNameAndRows);
+  itoa(numOfPrograms, itoaBuffer, 10);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(textAreaRowsCloser), textAreaRowsCloser);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], programsMessageAreaSize, programsMessageArea);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(textAreaEnd), textAreaEnd);
+  FSInfo fs_info;
+  SPIFFS.info(fs_info);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(openParagraphBigBoldFont), openParagraphBigBoldFont);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(fsInfoHeading), fsInfoHeading);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraphBigBoldFont), closeParagraphBigBoldFont);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(openParagraph), openParagraph);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(bytesMsgStr), bytesMsgStr);
+  itoa(fs_info.usedBytes, itoaBuffer, 10);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(slashStr), slashStr);
+  itoa(fs_info.totalBytes, itoaBuffer, 10);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+  writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraph), closeParagraph);
+  Serial.print("after fsInfo sendResp: "); Serial.println(writtenBytes);
   writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(INDEX_TAIL_HTML), INDEX_TAIL_HTML);
   Serial.print("sendResp: "); Serial.println(writtenBytes);
   Serial.println(htmlResponse);
@@ -212,7 +335,7 @@ void handleOpenProgram() {
     }
     else
     {
-        str += noProgramsStr;
+        str += noProgramsString;
     }
     server.send(200, "text/plain", str.c_str());
 }
@@ -347,6 +470,7 @@ void setup()
     server.on("/openProgram", handleOpenProgram);
     server.on("/deleteProgram", handleDeleteProgram);
     server.on("/deleteAllPrograms", handleDeleteAllPrograms);
+    server.on("/configureSettings", handleConfigureSettings);
     server.onNotFound(handleNotFound);
     server.begin();
     SPIFFS.begin();
