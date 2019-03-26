@@ -191,6 +191,8 @@ const String fileOpenErrorStr("Tiedoston aukaisu ei toimi!");
 const String cannotFindProgramStr("Ohjelmaa ei löydy!");
 const String fileRemoveFailureStr("Ohjelman poisto ei onnistunut!");
 const String fileCreateFailureStr("Ohjelman luonti ei onnistunut!");
+static const char fileCreateFailureMessage[] = R"rawliteral(Ohjelman luonti ei onnistunut!)rawliteral";
+static const char wrongParamsMessage[] = R"rawliteral(Vaarat parametrit!)rawliteral";
 
 static const char openParagraphBigBoldFont[] = R"rawliteral(<p><span style=\"font-size:24px;\"><strong>)rawliteral";
 static const char closeParagraphBigBoldFont[] = R"rawliteral(</strong></span></p>)rawliteral";
@@ -268,47 +270,105 @@ size_t saveProgram(File& file, const String& content)
     //writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
     return writtenBytes;
 }
-void handleCreateProgram() {
-  String str = "Tallennetaan ohjelma ...\r\n";
-  if (server.args() == 2 )
-  {
-      String lineStr = server.arg(0);
-      stamping::Verification verification;
-      verification.check(lineStr, actuators);
-      if (lineStr == "")
-      {
-          str += "Tyhjä ohjelma, ei talleteta!";
-      }
-      else if (not verification.passed())
-      {
-          str += "Virhe syötteessä!";
-      }
-      else
-      {
-          File file = SPIFFS.open(programFile, "a+");
-          if (!file) {
-              str += fileCreateFailureStr;
-          }
-          else
-          {
-//              String const endLineStr = "\n";
-              lineStr += "\n";
-              size_t const writtenBytes = saveProgram(file, lineStr);
-              str += String(verification.numOfPhases);
-              str += " vaihetta. \n";
-              str += "Kirjoitettu: ";
-              str += writtenBytes;
-              str += " tavua \n";
-          }
-          file.close();
-      }
-  }
-  else
-  {
-      str += wrongParamsStr;
-  }
+size_t saveProgram2(File& file, const char* const content, const int length)
+{
+    Serial.print("Line: "); Serial.println(content);
+    size_t writtenBytes = file.write((const uint8_t*)content, length);
+    //writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
+    return writtenBytes;
+}
+static const char createProgramHtmlHeader[] = R"rawliteral( 
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ohjelman tallennus</title>
+</head>
+<body>
+)rawliteral";
 
-  server.send(200, "text/plain", str.c_str());
+static const char createProgramHtmlEnd[] = R"rawliteral(
+</body>
+</html>
+)rawliteral";
+
+static const char createProgramGreeting[] = R"rawliteral(
+<p>Tallennetaan ohjelma ...</p>
+)rawliteral";
+static const char emptyProgramMessage[] = R"rawliteral(
+<p>Tyhja ohjelma, ei talleteta!</p>
+)rawliteral";
+static const char tooLongProgramMessage[] = R"rawliteral(
+<p>Liian pitka ohjelma, ei talleteta!</p>
+)rawliteral";
+static const char inputErrorMessage[] = R"rawliteral(
+<p>Virhe syotteessa!</p>
+)rawliteral";
+static const char createProgramOkMessageBegin[] = R"rawliteral(<p>)rawliteral";
+static const char createProgramOkMessageMiddle[] = R"rawliteral( vaihetta. Kirjoitettu: )rawliteral";
+static const char createProgramOkMessageEnd[] = R"rawliteral( tavua. </p>)rawliteral";
+
+void closeAndSendHtmlResponse(const int writtenBytes)
+{
+    snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramHtmlEnd), createProgramHtmlEnd);
+    Serial.println(htmlResponse);
+    server.send(200, "text/html", htmlResponse);
+}
+char programSaveBuffer[programMaxLength];
+
+void handleCreateProgram() {
+    memset(htmlResponse, 0, sizeof(htmlResponse));
+    int writtenBytes = snprintf(&htmlResponse[0], sizeof(createProgramHtmlHeader), createProgramHtmlHeader);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramGreeting), createProgramGreeting);
+    if (server.args() != 2 )
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(wrongParamsMessage), wrongParamsMessage);
+        closeAndSendHtmlResponse(writtenBytes);
+        return;
+    }
+    size_t programLength = server.arg(0).length();
+    if (not (programLength <= programMaxLength-1)) // one byte needed for end line
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(tooLongProgramMessage), tooLongProgramMessage);
+        closeAndSendHtmlResponse(writtenBytes);
+        return;
+    }
+    if (programLength == 0)
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(emptyProgramMessage), emptyProgramMessage);
+        closeAndSendHtmlResponse(writtenBytes);
+        return;
+    }
+    stamping::Verification verification;
+    verification.check(server.arg(0), actuators);
+    if (not verification.passed())
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(inputErrorMessage), inputErrorMessage);
+        closeAndSendHtmlResponse(writtenBytes);
+        return;
+    }
+    File file = SPIFFS.open(programFile, "a+");
+    if (!file)
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(fileCreateFailureMessage), fileCreateFailureMessage);
+        closeAndSendHtmlResponse(writtenBytes);
+        return;
+    }
+
+    memset(programSaveBuffer, 0, sizeof(programSaveBuffer));
+
+    memcpy(programSaveBuffer, server.arg(0).c_str(), programLength);
+    programSaveBuffer[programLength] = '\n';
+    programLength++;
+    size_t const writtenBytesToFile = saveProgram2(file, programSaveBuffer, programLength);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramOkMessageBegin), createProgramOkMessageBegin);
+    itoa(verification.numOfPhases, itoaBuffer, 10);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramOkMessageMiddle), createProgramOkMessageMiddle);
+    itoa(writtenBytesToFile, itoaBuffer, 10);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramOkMessageEnd), createProgramOkMessageEnd);
+    file.close();
+    closeAndSendHtmlResponse(writtenBytes);
 }
 void handleOpenProgram() {
     String str = "";
