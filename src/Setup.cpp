@@ -19,6 +19,11 @@ bool checkProgramFile()
     return fileOk;
 }
 #else
+int constexpr htmlResponseSize{3000};
+char htmlResponse[htmlResponseSize]{};
+static const char openParagraph[] = R"rawliteral(<p>)rawliteral";
+static const char closeParagraph[] = R"rawliteral(</p>)rawliteral";
+
 static const char INDEX_HEAD_HTML[] = R"rawliteral( 
 <!DOCTYPE html>
 <html>
@@ -48,6 +53,11 @@ static const char INDEX_TAIL_HTML[] = R"rawliteral(
 <form method="post" action="deleteAllPrograms">
 <br><button id=\"deleteAllPrograms\">Poista kaikki ohjelmat</button>
 </form>
+</body>
+</html>
+)rawliteral";
+
+static const char endHtml[] = R"rawliteral(
 </body>
 </html>
 )rawliteral";
@@ -128,8 +138,6 @@ void getSettings(Settings& settings)
     settings.delay = atoi(settingsReadArea);
     file.close();
 }
-const String settingsRemoveFailureStr("Vanhojen asetusten poisto ei onnistunut!");
-const String settingsCreateFailureStr("Asetusten tallennus ei onnistunut!");
 const String wrongParamsStr("Vaarat parametrit!");
 bool removeOldSettings()
 {
@@ -144,47 +152,83 @@ bool removeOldSettings()
     }
     return retValue;
 }
+static const char htmlHeadBegin[] = R"rawliteral( 
+<!DOCTYPE html>
+<html>
+<head>)rawliteral";
+
+static const char htmlHeadEnd[] = R"rawliteral(</head>
+<body>
+)rawliteral";
+
+static const char configureSettingsTitle[] = R"rawliteral(<title>Asetusten tallennus</title>)rawliteral";
+static const char emptyInputMessage[] = R"rawliteral(<p>Tyhja syote, ei talleteta!</p>)rawliteral";
+static const char configureSettingsGreeting[] = R"rawliteral(<p>Tallennetaan asetukset ...</p>)rawliteral";
+static const char settingsRemoveFailureMessage[] = R"rawliteral(<p>Vanhojen asetusten poisto ei onnistunut!</p>)rawliteral";
+static const char settingsCreateFailureMessage[] = R"rawliteral(<p>Asetusten tallennus ei onnistunut!</p>)rawliteral";
+static const char wrongParamsFailureMessage[] = R"rawliteral(<p>Vaarat parametrit!</p>)rawliteral";
+static const char tooLongInputMessage[] = R"rawliteral(<p>Liian pitka syote!</p>)rawliteral";
+static const char okMessage[] = R"rawliteral( ok!)rawliteral";
+
+void closeAndSendHtmlResponse(int writtenBytes)
+{
+	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(endHtml), endHtml);
+	Serial.println(htmlResponse);
+	server.send(200, "text/html", htmlResponse);
+}
+const size_t configureSettingsInputBufferSize{33};
+char configureSettingsInputBuffer[configureSettingsInputBufferSize];
 void handleConfigureSettings()
 {
-    String str = "Tallennetaan asetukset ...\n";
-    if (server.args() == 2 )
+	memset(htmlResponse, 0, sizeof(htmlResponse));
+	memset(configureSettingsInputBuffer, 0, sizeof(configureSettingsInputBuffer));
+	int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
+	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(configureSettingsTitle), configureSettingsTitle);
+	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
+    if (server.args() != 2 )
     {
-        const String inputStr = server.arg(0);
-        if (inputStr == "")
-        {
-            str += "Tyhja syote, ei talleteta!";
-        }
-        else
-        {
-            bool const retValue = removeOldSettings();
-            if (not retValue)
-            {
-                str += settingsRemoveFailureStr;
-            }
-            else
-            {
-                File file = SPIFFS.open(settingsFile, "a+");
-                if (!file) {
-                    str += settingsCreateFailureStr;
-                }
-                else
-                {
-                    file.write((const uint8_t*)(inputStr.c_str()), inputStr.length());
-                    str += inputStr;
-                    str += " ok! \n";
-                }
-                file.close();
-            }
-        }
+    	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(wrongParamsFailureMessage), wrongParamsFailureMessage);
+    	closeAndSendHtmlResponse(writtenBytes);
+    	return;
     }
-    else
+    size_t const settingsLength = server.arg(0).length();
+    Serial.print("settingsLength: "); Serial.println(settingsLength);
+    Serial.print("configureSettingsInputBufferSize: "); Serial.println(configureSettingsInputBufferSize);
+    if (not settingsLength > 0)
     {
-        str += wrongParamsStr;
+    	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(emptyInputMessage), emptyInputMessage);
+    	closeAndSendHtmlResponse(writtenBytes);
+    	return;
     }
-    server.send(200, "text/plain", str.c_str());
+    if (not (settingsLength < configureSettingsInputBufferSize))
+    {
+    	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(tooLongInputMessage), tooLongInputMessage);
+    	closeAndSendHtmlResponse(writtenBytes);
+    	return;
+    }
+    bool const retValue = removeOldSettings();
+    if (not retValue)
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(settingsRemoveFailureMessage), settingsRemoveFailureMessage);
+        closeAndSendHtmlResponse(writtenBytes);
+        return;
+    }
+    File file = SPIFFS.open(settingsFile, "a+");
+    if (!file)
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(settingsCreateFailureMessage), settingsCreateFailureMessage);
+        closeAndSendHtmlResponse(writtenBytes);
+        return;
+    }
+    memcpy(configureSettingsInputBuffer, server.arg(0).c_str(), settingsLength);
+    file.write((const uint8_t*)configureSettingsInputBuffer, settingsLength);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(openParagraph), openParagraph);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(configureSettingsInputBuffer), configureSettingsInputBuffer);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(okMessage), okMessage);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraph), closeParagraph);
+    file.close();
+    closeAndSendHtmlResponse(writtenBytes);
 }
-int constexpr htmlResponseSize{3000};
-char htmlResponse[htmlResponseSize]{};
 const String noProgramsString("Ei ohjelmia!");
 const String inputErrorStr("Vaara syote!");
 const String fileOpenErrorStr("Tiedoston aukaisu ei toimi!");
@@ -198,8 +242,6 @@ static const char openParagraphBigBoldFont[] = R"rawliteral(<p><span style=\"fon
 static const char closeParagraphBigBoldFont[] = R"rawliteral(</strong></span></p>)rawliteral";
 static const char fsInfoHeading[] = R"rawliteral(Tiedostojen tilan kayttoaste:)rawliteral";
 static const char programsHeading[] = R"rawliteral(Ohjelmat:)rawliteral";
-static const char openParagraph[] = R"rawliteral(<p>)rawliteral";
-static const char closeParagraph[] = R"rawliteral(</p>)rawliteral";
 static const char bytesMsgStr[] = R"rawliteral(tavuja: )rawliteral";
 static const char slashStr[] = R"rawliteral(/)rawliteral";
 static const char textAreaStartAndColumns[] = R"rawliteral(<p><textarea cols=)rawliteral";
@@ -286,11 +328,6 @@ static const char createProgramHtmlHeader[] = R"rawliteral(
 <body>
 )rawliteral";
 
-static const char createProgramHtmlEnd[] = R"rawliteral(
-</body>
-</html>
-)rawliteral";
-
 static const char createProgramGreeting[] = R"rawliteral(
 <p>Tallennetaan ohjelma ...</p>
 )rawliteral";
@@ -307,12 +344,6 @@ static const char createProgramOkMessageBegin[] = R"rawliteral(<p>)rawliteral";
 static const char createProgramOkMessageMiddle[] = R"rawliteral( vaihetta. Kirjoitettu: )rawliteral";
 static const char createProgramOkMessageEnd[] = R"rawliteral( tavua. </p>)rawliteral";
 
-void closeAndSendHtmlResponse(const int writtenBytes)
-{
-    snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramHtmlEnd), createProgramHtmlEnd);
-    Serial.println(htmlResponse);
-    server.send(200, "text/html", htmlResponse);
-}
 char programSaveBuffer[programMaxLength];
 
 void handleCreateProgram() {
