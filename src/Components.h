@@ -9,7 +9,9 @@
 #include "LiquidCrystal_I2C.h"
 #ifdef ESP8266
 #include "ESP8266WiFi.h"
-#include "ESP8266WebServer.h"
+#include "ESPAsyncTCP.h"
+#include "ESPAsyncWebServer.h"
+//#include "ESP8266WebServer.h"
 #include "FS.h"
 #endif
 #include "Verification.h"
@@ -30,5 +32,6 @@ extern String const programFile;
 #endif
 extern LiquidCrystal_I2C lcd;
 #ifdef ESP8266
-extern ESP8266WebServer server;
+//extern ESP8266WebServer server;
+extern AsyncWebServer server;
 #endif

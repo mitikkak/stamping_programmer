@@ -101,7 +101,7 @@ Selections selections;
 void loop()
 {
 #ifdef ESP8266
-    server.handleClient();
+//    server.handleClient();
 #else
     if (buttons.touched())
     {

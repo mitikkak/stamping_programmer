@@ -23,5 +23,6 @@ String const programFile = "/ohjelmat.txt";
 LiquidCrystal_I2C lcd(0x27,16,4);
 #ifdef ESP8266
 static const int server_port = 80;
-ESP8266WebServer server(server_port);
+//ESP8266WebServer server(server_port);
+AsyncWebServer server(server_port);
 #endif

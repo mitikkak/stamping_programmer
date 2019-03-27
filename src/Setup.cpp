@@ -170,64 +170,67 @@ static const char wrongParamsFailureMessage[] = R"rawliteral(<p>Vaarat parametri
 static const char tooLongInputMessage[] = R"rawliteral(<p>Liian pitka syote!</p>)rawliteral";
 static const char okMessage[] = R"rawliteral( ok!)rawliteral";
 
-void closeAndSendHtmlResponse(int writtenBytes)
+void closeAndSendHtmlResponse(int writtenBytes, AsyncWebServerRequest *request)
 {
 	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(endHtml), endHtml);
 	Serial.println(htmlResponse);
-	server.send(200, "text/html", htmlResponse);
+	request->send(200, "text/html", htmlResponse);
 }
+
 const size_t configureSettingsInputBufferSize{33};
 char configureSettingsInputBuffer[configureSettingsInputBufferSize];
-void handleConfigureSettings()
+void handleConfigureSettings(AsyncWebServerRequest *request)
 {
 	memset(htmlResponse, 0, sizeof(htmlResponse));
 	memset(configureSettingsInputBuffer, 0, sizeof(configureSettingsInputBuffer));
 	int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
 	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(configureSettingsTitle), configureSettingsTitle);
 	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
-    if (server.args() != 2 )
+    if (request->args() != 2 )
     {
     	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(wrongParamsFailureMessage), wrongParamsFailureMessage);
-    	closeAndSendHtmlResponse(writtenBytes);
+    	closeAndSendHtmlResponse(writtenBytes, request);
     	return;
     }
-    size_t const settingsLength = server.arg(0).length();
+    size_t const arg_idx{0};
+    const String& argument = request->arg(arg_idx);
+    size_t const settingsLength = argument.length();
     Serial.print("settingsLength: "); Serial.println(settingsLength);
     Serial.print("configureSettingsInputBufferSize: "); Serial.println(configureSettingsInputBufferSize);
     if (not settingsLength > 0)
     {
     	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(emptyInputMessage), emptyInputMessage);
-    	closeAndSendHtmlResponse(writtenBytes);
+    	closeAndSendHtmlResponse(writtenBytes, request);
     	return;
     }
     if (not (settingsLength < configureSettingsInputBufferSize))
     {
     	writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(tooLongInputMessage), tooLongInputMessage);
-    	closeAndSendHtmlResponse(writtenBytes);
+    	closeAndSendHtmlResponse(writtenBytes, request);
     	return;
     }
     bool const retValue = removeOldSettings();
     if (not retValue)
     {
         writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(settingsRemoveFailureMessage), settingsRemoveFailureMessage);
-        closeAndSendHtmlResponse(writtenBytes);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     File file = SPIFFS.open(settingsFile, "a+");
     if (!file)
     {
         writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(settingsCreateFailureMessage), settingsCreateFailureMessage);
-        closeAndSendHtmlResponse(writtenBytes);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
-    memcpy(configureSettingsInputBuffer, server.arg(0).c_str(), settingsLength);
+    memcpy(configureSettingsInputBuffer, argument.c_str(), settingsLength);
     file.write((const uint8_t*)configureSettingsInputBuffer, settingsLength);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(openParagraph), openParagraph);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(configureSettingsInputBuffer), configureSettingsInputBuffer);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(okMessage), okMessage);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraph), closeParagraph);
     file.close();
-    closeAndSendHtmlResponse(writtenBytes);
+    closeAndSendHtmlResponse(writtenBytes, request);
 }
 const String noProgramsString("Ei ohjelmia!");
 const String inputErrorStr("Vaara syote!");
@@ -255,7 +258,7 @@ static const char currentDelayHeading[] = R"rawliteral(<p>Viive tyovaiheiden val
 static const char inputDelay[] = R"rawliteral(<br><input name="line" type="text" size="1" value="" ><input type="submit" name="clk_action" value="Aseta viive">)rawliteral";
 static const char endForm[] = R"rawliteral(</form>)rawliteral";
 
-void handleRoot() {
+void handleRoot(AsyncWebServerRequest *request) {
   memset(htmlResponse, 0, sizeof(htmlResponseSize));
   memset(programsMessageArea, 0, sizeof(programsMessageArea));
   int writtenBytes = snprintf(&htmlResponse[0], sizeof(INDEX_HEAD_HTML), INDEX_HEAD_HTML);
@@ -303,7 +306,7 @@ void handleRoot() {
   writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(INDEX_TAIL_HTML), INDEX_TAIL_HTML);
   Serial.print("sendResp: "); Serial.println(writtenBytes);
   Serial.println(htmlResponse);
-  server.send(200, "text/html", htmlResponse);
+  request->send(200, "text/html", htmlResponse);
 }
 size_t saveProgram(File& file, const String& content)
 {
@@ -346,48 +349,50 @@ static const char createProgramOkMessageEnd[] = R"rawliteral( tavua. </p>)rawlit
 
 char programSaveBuffer[programMaxLength];
 
-void handleCreateProgram() {
+void handleCreateProgram(AsyncWebServerRequest *request) {
     memset(htmlResponse, 0, sizeof(htmlResponse));
     int writtenBytes = snprintf(&htmlResponse[0], sizeof(createProgramHtmlHeader), createProgramHtmlHeader);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramGreeting), createProgramGreeting);
-    if (server.args() != 2 )
+    if (request->args() != 2 )
     {
         writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(wrongParamsMessage), wrongParamsMessage);
-        closeAndSendHtmlResponse(writtenBytes);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
-    size_t programLength = server.arg(0).length();
+    size_t const arg_idx = 0;
+    const String& argument = request->arg(arg_idx);
+    size_t programLength = argument.length();
     if (not (programLength <= programMaxLength-1)) // one byte needed for end line
     {
         writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(tooLongProgramMessage), tooLongProgramMessage);
-        closeAndSendHtmlResponse(writtenBytes);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     if (programLength == 0)
     {
         writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(emptyProgramMessage), emptyProgramMessage);
-        closeAndSendHtmlResponse(writtenBytes);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     stamping::Verification verification;
-    verification.check(server.arg(0), actuators);
+    verification.check(argument, actuators);
     if (not verification.passed())
     {
         writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(inputErrorMessage), inputErrorMessage);
-        closeAndSendHtmlResponse(writtenBytes);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     File file = SPIFFS.open(programFile, "a+");
     if (!file)
     {
         writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(fileCreateFailureMessage), fileCreateFailureMessage);
-        closeAndSendHtmlResponse(writtenBytes);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
 
     memset(programSaveBuffer, 0, sizeof(programSaveBuffer));
 
-    memcpy(programSaveBuffer, server.arg(0).c_str(), programLength);
+    memcpy(programSaveBuffer, argument.c_str(), programLength);
     programSaveBuffer[programLength] = '\n';
     programLength++;
     size_t const writtenBytesToFile = saveProgram2(file, programSaveBuffer, programLength);
@@ -399,22 +404,15 @@ void handleCreateProgram() {
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramOkMessageEnd), createProgramOkMessageEnd);
     file.close();
-    closeAndSendHtmlResponse(writtenBytes);
+    closeAndSendHtmlResponse(writtenBytes, request);
 }
-void handleOpenProgram() {
+
+void handleOpenProgram(AsyncWebServerRequest *request)
+{
     String str = "";
     if (SPIFFS.exists(programFile))
     {
         File file = SPIFFS.open(programFile, "r");
-#if 0
-        str += programFile + " koko :";
-        str += file.size() + "\n";
-        str += "Ohjelmat ovat: \n";
-        while (file.available() && file.position() < file.size())
-        {
-            str += file.readStringUntil('\n');
-        }
-#endif
         Serial.print("size: "); Serial.println(file.size());
         for(int i=0;i<file.size();i++)
         {
@@ -428,8 +426,9 @@ void handleOpenProgram() {
     {
         str += noProgramsString;
     }
-    server.send(200, "text/plain", str.c_str());
+    request->send(200, "text/plain", str.c_str());
 }
+
 void printFileToSerial(File& file)
 {
     Serial.print("File size: "); Serial.println(file.size());
@@ -438,29 +437,31 @@ void printFileToSerial(File& file)
         Serial.print("["); Serial.print(i); Serial.print("]: "); Serial.println((char) file.read());
     }
 }
-void handleDeleteProgram()
+void handleDeleteProgram(AsyncWebServerRequest *request)
 {
-    if (server.args() != 2 )
+    if (request->args() != 2 )
     {
-        server.send(200, "text/plain", wrongParamsStr);
+        request->send(200, "text/plain", wrongParamsStr);
         return;
     }
     if (not SPIFFS.exists(programFile))
     {
-        server.send(200, "text/plain", noProgramsStr);
+        request->send(200, "text/plain", noProgramsStr);
         return;
     }
-    const int lineIndex = atoi(server.arg(0).c_str()) - 1;
+    const size_t ard_idx{0};
+    const String& argument = request->arg(ard_idx);
+    const int lineIndex = atoi(argument.c_str()) - 1;
     Serial.print("Poistetaan ohjelma rivi: "); Serial.println(lineIndex+1);
     if (lineIndex < 0)
     {
-        server.send(200, "text/plain", inputErrorStr);
+        request->send(200, "text/plain", inputErrorStr);
         return;
     }
     File file = SPIFFS.open(programFile, "r+");
     if (not file)
     {
-        server.send(200, "text/plain", fileOpenErrorStr);
+        request->send(200, "text/plain", fileOpenErrorStr);
         return;
     }
     printFileToSerial(file);
@@ -479,7 +480,7 @@ void handleDeleteProgram()
     Serial.print("final fpos: "); Serial.println(file.position());
     if (file.position() >= file.size())
     {
-        server.send(200, "text/plain", cannotFindProgramStr);
+        request->send(200, "text/plain", cannotFindProgramStr);
         return;
     }
     Serial.println("skipataan rivi");
@@ -498,7 +499,7 @@ void handleDeleteProgram()
     bool const fileDeleteSuccessful = SPIFFS.remove(programFile);
     if (not fileDeleteSuccessful)
     {
-        server.send(200, "text/plain", fileRemoveFailureStr.c_str());
+        request->send(200, "text/plain", fileRemoveFailureStr.c_str());
         return;
     }
     bool const emptyContent = (newContent.length() == 0);
@@ -507,16 +508,16 @@ void handleDeleteProgram()
         Serial.println("luodaan uusi");
         file = SPIFFS.open(programFile, "a+");
         if (!file) {
-            server.send(200, "text/plain", fileCreateFailureStr.c_str());
+            request->send(200, "text/plain", fileCreateFailureStr.c_str());
             return;
         }
     }
     saveProgram(file, newContent);
     file.close();
     String str = "Poistettu ohjelma nro " + String(lineIndex+1);
-    server.send(200, "text/plain", str.c_str());
+    request->send(200, "text/plain", str.c_str());
 }
-void handleDeleteAllPrograms()
+void handleDeleteAllPrograms(AsyncWebServerRequest *request)
 {
     String str = "";
     bool const retValue = SPIFFS.remove(programFile);
@@ -528,10 +529,10 @@ void handleDeleteAllPrograms()
     {
         str += fileRemoveFailureStr;
     }
-    server.send(200, "text/plain", str.c_str());
+    request->send(200, "text/plain", str.c_str());
 }
-void handleNotFound() {
-  server.send(404, "text/plain", "Sivua ei ole!");
+void handleNotFound(AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "Sivua ei ole!");
 }
 #endif
 
@@ -556,7 +557,7 @@ void setup()
     lcd.setCursor(0,1);
     lcd.print("IP: ");
     lcd.print(WiFi.softAPIP());
-    server.on("/", handleRoot);
+    server.on("/", HTTP_GET, handleRoot);
     server.on("/createProgram", handleCreateProgram);
     server.on("/openProgram", handleOpenProgram);
     server.on("/deleteProgram", handleDeleteProgram);
