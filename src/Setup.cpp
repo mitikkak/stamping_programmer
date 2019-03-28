@@ -64,6 +64,7 @@ static const char endHtml[] = R"rawliteral(
 
 //---------------------------------------------------------
 const char noProgramsStr[] = "Ei ohjelmia";
+static const char noProgramsMessage[] = R"rawliteral(<p> Ei ohjelmia </p>)rawliteral";
 const char fileOpenFailedStr[] = "Ohjelmien luku epaonnistui!";
 
 unsigned int numOfPrograms{0};
@@ -138,7 +139,6 @@ void getSettings(Settings& settings)
     settings.delay = atoi(settingsReadArea);
     file.close();
 }
-const String wrongParamsStr("Vaarat parametrit!");
 bool removeOldSettings()
 {
     bool retValue{false};
@@ -155,9 +155,11 @@ bool removeOldSettings()
 static const char htmlHeadBegin[] = R"rawliteral( 
 <!DOCTYPE html>
 <html>
-<head>)rawliteral";
+<head>
+)rawliteral";
 
-static const char htmlHeadEnd[] = R"rawliteral(</head>
+static const char htmlHeadEnd[] = R"rawliteral(
+</head>
 <body>
 )rawliteral";
 
@@ -257,6 +259,13 @@ static const char settingsHeading[] = R"rawliteral(<form method="post" action="c
 static const char currentDelayHeading[] = R"rawliteral(<p>Viive tyovaiheiden valissa: )rawliteral";
 static const char inputDelay[] = R"rawliteral(<br><input name="line" type="text" size="1" value="" ><input type="submit" name="clk_action" value="Aseta viive">)rawliteral";
 static const char endForm[] = R"rawliteral(</form>)rawliteral";
+static const char deleteProgramTitle[] = R"rawliteral(<title>Ohjelman poisto</title>)rawliteral";
+static const char fileOpenErrorMessage[] = R"rawliteral(<p>Ohjelman avaus ei onnistunut!</p>)rawliteral";
+static const char cannotFindProgramMessage[] = R"rawliteral(<p>Ohjelmaa ei loydy!</p>)rawliteral";
+static const char fileRemoveFailureMessage[] = R"rawliteral(<p>Ohjelman poisto ei onnistunut!</p>)rawliteral";
+static const char programRemoveMessageBegin[] = R"rawliteral(<p>Poistettu ohjelma nro )rawliteral";
+static const char deleteAllProgramsTitle[] = R"rawliteral(<title>Kaikkien ohjelmien poisto</title>)rawliteral";
+static const char deleteAllProgramsOkMessage[] = R"rawliteral(<p>Kaikki ohjelmat poistettu</p>)rawliteral";
 
 void handleRoot(AsyncWebServerRequest *request) {
   memset(htmlResponse, 0, sizeof(htmlResponseSize));
@@ -322,14 +331,7 @@ size_t saveProgram2(File& file, const char* const content, const int length)
     //writtenBytes += file.write((const uint8_t*)endLineStr.c_str(), endLineStr.length());
     return writtenBytes;
 }
-static const char createProgramHtmlHeader[] = R"rawliteral( 
-<!DOCTYPE html>
-<html>
-<head>
-<title>Ohjelman tallennus</title>
-</head>
-<body>
-)rawliteral";
+static const char createProgramTitle[] = R"rawliteral(<title>Ohjelman tallennus</title>)rawliteral";
 
 static const char createProgramGreeting[] = R"rawliteral(
 <p>Tallennetaan ohjelma ...</p>
@@ -351,7 +353,9 @@ char programSaveBuffer[programMaxLength];
 
 void handleCreateProgram(AsyncWebServerRequest *request) {
     memset(htmlResponse, 0, sizeof(htmlResponse));
-    int writtenBytes = snprintf(&htmlResponse[0], sizeof(createProgramHtmlHeader), createProgramHtmlHeader);
+    int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramTitle), createProgramTitle);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramGreeting), createProgramGreeting);
     if (request->args() != 2 )
     {
@@ -437,16 +441,24 @@ void printFileToSerial(File& file)
         Serial.print("["); Serial.print(i); Serial.print("]: "); Serial.println((char) file.read());
     }
 }
+
+
 void handleDeleteProgram(AsyncWebServerRequest *request)
 {
+    memset(htmlResponse, 0, sizeof(htmlResponse));
+    int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(deleteProgramTitle), deleteProgramTitle);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
     if (request->args() != 2 )
     {
-        request->send(200, "text/plain", wrongParamsStr);
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(wrongParamsMessage), wrongParamsMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     if (not SPIFFS.exists(programFile))
     {
-        request->send(200, "text/plain", noProgramsStr);
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(noProgramsMessage), noProgramsMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     const size_t ard_idx{0};
@@ -455,13 +467,15 @@ void handleDeleteProgram(AsyncWebServerRequest *request)
     Serial.print("Poistetaan ohjelma rivi: "); Serial.println(lineIndex+1);
     if (lineIndex < 0)
     {
-        request->send(200, "text/plain", inputErrorStr);
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(inputErrorMessage), inputErrorMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     File file = SPIFFS.open(programFile, "r+");
     if (not file)
     {
-        request->send(200, "text/plain", fileOpenErrorStr);
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(fileOpenErrorMessage), fileOpenErrorMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     printFileToSerial(file);
@@ -480,7 +494,8 @@ void handleDeleteProgram(AsyncWebServerRequest *request)
     Serial.print("final fpos: "); Serial.println(file.position());
     if (file.position() >= file.size())
     {
-        request->send(200, "text/plain", cannotFindProgramStr);
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(cannotFindProgramMessage), cannotFindProgramMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     Serial.println("skipataan rivi");
@@ -499,7 +514,8 @@ void handleDeleteProgram(AsyncWebServerRequest *request)
     bool const fileDeleteSuccessful = SPIFFS.remove(programFile);
     if (not fileDeleteSuccessful)
     {
-        request->send(200, "text/plain", fileRemoveFailureStr.c_str());
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(fileRemoveFailureMessage), fileRemoveFailureMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
         return;
     }
     bool const emptyContent = (newContent.length() == 0);
@@ -507,29 +523,37 @@ void handleDeleteProgram(AsyncWebServerRequest *request)
     {
         Serial.println("luodaan uusi");
         file = SPIFFS.open(programFile, "a+");
-        if (!file) {
-            request->send(200, "text/plain", fileCreateFailureStr.c_str());
+        if (!file)
+        {
+            writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(fileCreateFailureMessage), fileCreateFailureMessage);
+            closeAndSendHtmlResponse(writtenBytes, request);
             return;
         }
     }
     saveProgram(file, newContent);
     file.close();
-    String str = "Poistettu ohjelma nro " + String(lineIndex+1);
-    request->send(200, "text/plain", str.c_str());
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(programRemoveMessageBegin), programRemoveMessageBegin);
+    itoa(lineIndex+1, itoaBuffer, 10);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(itoaBuffer), itoaBuffer);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraph), closeParagraph);
+
+    closeAndSendHtmlResponse(writtenBytes, request);
 }
 void handleDeleteAllPrograms(AsyncWebServerRequest *request)
 {
-    String str = "";
+    memset(htmlResponse, 0, sizeof(htmlResponse));
+    int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(deleteAllProgramsTitle), deleteAllProgramsTitle);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
     bool const retValue = SPIFFS.remove(programFile);
-    if (retValue)
+    if (not retValue)
     {
-        str += "Kaikki ohjelmat poistettu";
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(fileRemoveFailureMessage), fileRemoveFailureMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
+        return;
     }
-    else
-    {
-        str += fileRemoveFailureStr;
-    }
-    request->send(200, "text/plain", str.c_str());
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(deleteAllProgramsOkMessage), deleteAllProgramsOkMessage);
+    closeAndSendHtmlResponse(writtenBytes, request);
 }
 void handleNotFound(AsyncWebServerRequest *request) {
     request->send(404, "text/plain", "Sivua ei ole!");
