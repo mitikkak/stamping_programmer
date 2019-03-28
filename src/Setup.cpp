@@ -38,7 +38,7 @@ static const char INDEX_MIDDLE_HTML[] = R"rawliteral(
 <br><input name="line" type="text" size="16000" value="" ><br><br>
 <input type="submit" name="clk_action" value="Luo ohjelma">
 </form>
-<form method="post" action="openProgram">
+<form method="post" action="runProgram">
 <p><span style="font-size:24px;"><strong>Aja ohjelma:</strong></span></p>
 <br><input name="line" type="text" size="1" value="" ><br><br>
 <input type="submit" name="clk_action" value="Aja ohjelma">
@@ -235,11 +235,6 @@ void handleConfigureSettings(AsyncWebServerRequest *request)
     closeAndSendHtmlResponse(writtenBytes, request);
 }
 const String noProgramsString("Ei ohjelmia!");
-const String inputErrorStr("Vaara syote!");
-const String fileOpenErrorStr("Tiedoston aukaisu ei toimi!");
-const String cannotFindProgramStr("Ohjelmaa ei löydy!");
-const String fileRemoveFailureStr("Ohjelman poisto ei onnistunut!");
-const String fileCreateFailureStr("Ohjelman luonti ei onnistunut!");
 static const char fileCreateFailureMessage[] = R"rawliteral(Ohjelman luonti ei onnistunut!)rawliteral";
 static const char wrongParamsMessage[] = R"rawliteral(Vaarat parametrit!)rawliteral";
 
@@ -348,6 +343,10 @@ static const char inputErrorMessage[] = R"rawliteral(
 static const char createProgramOkMessageBegin[] = R"rawliteral(<p>)rawliteral";
 static const char createProgramOkMessageMiddle[] = R"rawliteral( vaihetta. Kirjoitettu: )rawliteral";
 static const char createProgramOkMessageEnd[] = R"rawliteral( tavua. </p>)rawliteral";
+static const char runProgramTitle[] = R"rawliteral(<title>Aja ohjelma</title>)rawliteral";
+static const char runProgramOkMessageBegin[] = R"rawliteral(<p>Ajetaan ohjelma:
+<br>
+)rawliteral";
 
 char programSaveBuffer[programMaxLength];
 
@@ -411,26 +410,80 @@ void handleCreateProgram(AsyncWebServerRequest *request) {
     closeAndSendHtmlResponse(writtenBytes, request);
 }
 
-void handleOpenProgram(AsyncWebServerRequest *request)
+void handleRunProgram(AsyncWebServerRequest *request)
 {
-    String str = "";
-    if (SPIFFS.exists(programFile))
+    memset(htmlResponse, 0, sizeof(htmlResponse));
+    int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(runProgramTitle), runProgramTitle);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
+
+    if (not SPIFFS.exists(programFile))
     {
-        File file = SPIFFS.open(programFile, "r");
-        Serial.print("size: "); Serial.println(file.size());
-        for(int i=0;i<file.size();i++)
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(noProgramsMessage), noProgramsMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
+        return;
+    }
+    if (request->args() != 2 )
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(wrongParamsMessage), wrongParamsMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
+        return;
+    }
+    const size_t ard_idx{0};
+    const String& argument = request->arg(ard_idx);
+    const int lineIndex = atoi(argument.c_str()) - 1;
+    if (lineIndex < 0)
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(inputErrorMessage), inputErrorMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
+        return;
+    }
+
+    File file = SPIFFS.open(programFile, "r");
+    if (not file)
+    {
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(fileOpenErrorMessage), fileOpenErrorMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
+        return;
+    }
+    // Seek to correct program
+    for(int i=0, atLine = 0;i<file.size() and atLine < lineIndex;i++)
+    {
+        const char c = (char)file.read();
+        Serial.print(c); Serial.print(", fpos: "); Serial.println(file.position());
+        if (c == '\n')
         {
-            const char c = (char)file.read();
-            Serial.print(c);
-            str += c;
+            atLine++;
         }
-        file.close();
     }
-    else
+    if (file.position() >= file.size())
     {
-        str += noProgramsString;
+        writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(cannotFindProgramMessage), cannotFindProgramMessage);
+        closeAndSendHtmlResponse(writtenBytes, request);
+        return;
     }
-    request->send(200, "text/plain", str.c_str());
+    memset(programSaveBuffer, 0, sizeof(programSaveBuffer));
+    int programLength = 0;
+    for(int i=0; (i<file.size()) and (file.position() <= file.size()) and (i < programMaxLength);i++)
+    {
+        const char c = (char)file.read();
+        programSaveBuffer[i] = c;
+        programLength++;
+        Serial.print(i); Serial.print(": "); Serial.println(programSaveBuffer[i]);
+        if (c == '\n')
+        {
+            break;
+        }
+    }
+    file.close();
+
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(runProgramOkMessageBegin), runProgramOkMessageBegin);
+    Serial.println(writtenBytes);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], programLength+1, programSaveBuffer);
+    Serial.println(writtenBytes);
+    writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraph), closeParagraph);
+    Serial.println(writtenBytes);
+    closeAndSendHtmlResponse(writtenBytes, request);
 }
 
 void printFileToSerial(File& file)
@@ -583,7 +636,7 @@ void setup()
     lcd.print(WiFi.softAPIP());
     server.on("/", HTTP_GET, handleRoot);
     server.on("/createProgram", handleCreateProgram);
-    server.on("/openProgram", handleOpenProgram);
+    server.on("/runProgram", handleRunProgram);
     server.on("/deleteProgram", handleDeleteProgram);
     server.on("/deleteAllPrograms", handleDeleteAllPrograms);
     server.on("/configureSettings", handleConfigureSettings);
