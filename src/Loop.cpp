@@ -100,9 +100,6 @@ Selections selections;
 
 void loop()
 {
-#ifdef ESP8266
-//    server.handleClient();
-#else
     if (buttons.touched())
     {
         if (buttons.up())
@@ -120,5 +117,4 @@ void loop()
         selections.show();
         buttons.clear();
     }
-#endif
 }

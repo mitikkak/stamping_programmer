@@ -13,7 +13,21 @@ set(esp_async_tcp_sources
     ${ESP_ASYNC_TCP_DIR}/ESPAsyncTCP.cpp
 )
 
-set(sources ${product_sources})
+set(product_sources_12e 
+        ${SRC_DIR}/Loop_12e.cpp
+        ${SRC_DIR}/Setup_12e.cpp
+        ${SRC_DIR}/Components_12e.cpp
+        ${SRC_DIR}/Program.cpp
+        ${SRC_DIR}/SerialPrinter.cpp
+        ${SRC_DIR}/Phases.cpp
+        ${SRC_DIR}/StringWrapper.cpp
+        ${SRC_DIR}/Actuators.cpp
+        ${SRC_DIR}/Output.cpp
+        ${SRC_DIR}/Buttons.cpp
+        ${SRC_DIR}/Verification.cpp
+)
+
+set(sources ${product_sources_12e})
 set(EXT_SRC_DIR ${SDFAT_DIR}
                 ${SPI_ESP8266_DIR}
                 ${IIC_LCD_SRC}

@@ -10,7 +10,7 @@ struct Verification
     Verification()
     {
     }
-    STRING_TYPE check(const STRING_TYPE& progStr, const Actuators& actuators);
+    STRING_TYPE check(const STRING_TYPE& progStr, const int numberOfOutputs);
     static constexpr char startingSeparator{'['};
     static constexpr char endingSeparator{']'};
     static constexpr char middleSeparator{':'};

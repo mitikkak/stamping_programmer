@@ -1,5 +1,16 @@
 project(ut)
 
+set(product_sources_ut 
+        ${SRC_DIR}/Program.cpp
+        ${SRC_DIR}/SerialPrinter.cpp
+        ${SRC_DIR}/Phases.cpp
+        ${SRC_DIR}/StringWrapper.cpp
+        ${SRC_DIR}/Actuators.cpp
+        ${SRC_DIR}/Output.cpp
+        ${SRC_DIR}/Buttons.cpp
+        ${SRC_DIR}/Verification.cpp
+)
+
 set(STUBS_DIR ${ARDUINO_CMAKE_DIR}/ut/stubs)
 set(TEST_SRC_DIR ${PROJECT_ROOT}/tests)
 set(test_sources 
@@ -19,7 +30,7 @@ set(stub_sources
 add_executable(${PROJECT_NAME} 
                                 ${test_sources}
                                 ${stub_sources}
-                                ${product_sources}
+                                ${product_sources_ut}
 )
 
 set(GTEST_LIBRARIES gtest gmock)

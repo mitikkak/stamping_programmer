@@ -2,7 +2,7 @@
 
 namespace stamping
 {
-STRING_TYPE Verification::check(const STRING_TYPE& progStr, const Actuators& actuators)
+STRING_TYPE Verification::check(const STRING_TYPE& progStr, const int numberOfOutputs)
 {
  	STRING_TYPE valueStr("");
     for(int i=0;i<progStr.length();i++)
@@ -33,7 +33,7 @@ STRING_TYPE Verification::check(const STRING_TYPE& progStr, const Actuators& act
         else if (c == middleSeparator) /*and prevSeparator == startingSeparator*/
         {
         	const int prevValue = atoi(valueStr.c_str());
-        	if (prevValue > 0 and prevValue <= actuators.size())
+        	if (prevValue > 0 and prevValue <= numberOfOutputs)
         	{
         		prevSeparator = c;
         		valueStr="";

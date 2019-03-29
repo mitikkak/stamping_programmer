@@ -10,6 +10,19 @@ include(${ARDUINO_CMAKE_DIR}/atmega328/deploy.cmake)
 
 set(ARDUINO_PINS ${ARDUINO_PATH}/hardware/arduino/avr/variants/standard)
 
+set(product_sources ${SRC_DIR}/Loop.cpp
+        ${SRC_DIR}/Setup.cpp
+        ${SRC_DIR}/Components.cpp
+        ${SRC_DIR}/Program.cpp
+        ${SRC_DIR}/SerialPrinter.cpp
+        ${SRC_DIR}/Phases.cpp
+        ${SRC_DIR}/StringWrapper.cpp
+        ${SRC_DIR}/Actuators.cpp
+        ${SRC_DIR}/Output.cpp
+        ${SRC_DIR}/Buttons.cpp
+        ${SRC_DIR}/Verification.cpp
+)
+
 set(ext_sources ${SDFAT_DIR}/FatLib/FatFile.cpp
     ${SDFAT_DIR}/FatLib/FatFileLFN.cpp
     #${SDFAT_DIR}/FatLib/FatFilePrint.cpp
