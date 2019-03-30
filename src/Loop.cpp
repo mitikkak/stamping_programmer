@@ -1,120 +1,83 @@
 #include "Arduino.h"
 #include "Components.h"
 #include "Program.h"
+#include "Parser.h"
 
-class Runnable
+using namespace stamping;
+
+int constexpr bufferSize{programMaxLength + 20};
+
+STRING_TYPE serialReadBuffer("");
+typedef unsigned long TIME;
+bool programAvailable = false;
+
+Program program1(actuators);
+Program program2(actuators);
+Program* currentProgram{&program1};
+
+Program* selectProgramCandidate()
 {
-public:
-	virtual ~Runnable() {}
-	virtual void run() = 0;
-};
-struct Selection
+    if (currentProgram == &program1)
+    {
+        return &program2;
+    }
+    return &program1;
+}
+void swapProgram()
 {
-    Selection(const char* const n, Runnable& r)
-    : name{n}, runner(r)
-    {}
-    void run() const
+    if (currentProgram == &program1)
     {
-        Serial.print("Suoritetaan: "); Serial.println(name);
-        runner.run();
+        currentProgram = &program2;
     }
-
-    const char* const name;
-    Runnable& runner;
-};
-
-class ExecuteProgram : public Runnable
-{
-public:
-	void run()
-	{
-		const char* savedProgramStr = "[1:1256][0:329][3:2132]";
-		stamping::Program p(actuators, savedProgramStr);
-		p.run();
-	}
-};
-class CreateProgram : public Runnable
-{
-public:
-	void run()
-	{
-#ifdef ESP8266
-#else
-	    Serial.println("Avataan: ");Serial.println(programFile);
-	    ifstream sdin(programFile);
-	    Serial.print("flags: "); Serial.println(sdin.rdstate());
-	    const int line_buffer_size = 18;
-	    char buffer[line_buffer_size];
-#endif
-	}
-};
-
-ExecuteProgram executeProgram;
-CreateProgram createProgram;
-class Selections
-{
-public:
-    Selections()
-    : selections{
-    Selection("Aja ohjelma", executeProgram),
-    Selection("Luo ohjelma", createProgram)
-    }
-    {}
-    void show() const
+    else
     {
-        static int occ = 0;
-        occ++;
-        Serial.print("["); Serial.print(occ); Serial.print("]");
-        Serial.println(selections[atLine].name);
+        currentProgram = &program1;
     }
-    const char* operator[](const int i) const
-    {
-        if (i < numOfSelections)
-        {
-            return selections[i].name;
-        }
-        return "";
-    }
-    void next()
-    {
-        atLine++;
-        if (atLine >= numOfSelections){ atLine = 0;}
-    }
-    void prev()
-    {
-        atLine--;
-        if (atLine < 0){ atLine = numOfSelections-1;}
-    }
-    void runCurrent() const
-    {
-        selections[atLine].run();
-    }
-private:
-    static const int numOfSelections{2};
-    const Selection selections[numOfSelections];
-    int atLine{0};
-};
-Selections selections;
-
-
+}
 
 void loop()
 {
-    if (buttons.touched())
+    bool newMessageReady{false};
+    bool headerPresent{false};
+    bool tailPresent{false};
+    while ((Serial.available() > 0) and (not newMessageReady))
     {
-        if (buttons.up())
+        const char byte = (char) Serial.read();
+        if (byte != '\n')
         {
-            selections.prev();
+            serialReadBuffer += byte;
+            Serial.println(serialReadBuffer);
         }
-        if (buttons.down())
+        if (serialReadBuffer.startsWith(header))
         {
-            selections.next();
+            Serial.println(F("New program starts"));
+            headerPresent = true;
         }
-        if (buttons.select())
+        if (serialReadBuffer.endsWith(tail))
         {
-            selections.runCurrent();
+            Serial.println(F("New program received"));
+            tailPresent = true;
         }
-        selections.show();
+        newMessageReady |= headerPresent and tailPresent;
+    }
+    if (newMessageReady)
+    {
+        Parser p;
+        Program* prgCandidate = selectProgramCandidate();
+        p.parse(serialReadBuffer, *prgCandidate);
+        if (p.ok())
+        {
+            swapProgram();
+            programAvailable = true;
+        }
+    }
+    digitalWrite(programReadyPin, programAvailable ? HIGH : LOW);
+
+    if (buttons.up() and programAvailable)
+    {
+        currentProgram->run();
+        Serial.println(F("Program executed!!"));
         buttons.clear();
     }
+    serialReadBuffer = "";
 }

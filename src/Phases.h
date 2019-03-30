@@ -14,9 +14,9 @@ public:
 	void serialize(STRING_TYPE&) const;
 	int size() const { return numOfOutputs; }
 	const Output& operator[](const int) const;
+	static constexpr int maxOutputs = 50;
 private:
 	void sureInsert(unsigned const index, Output o);
-	static constexpr int maxOutputs = 100;
 	Output outputs[maxOutputs];
 	int numOfOutputs{0};
 };

@@ -50,7 +50,6 @@ static const char noProgramsMessage[] = R"rawliteral(<p> Ei ohjelmia </p>)rawlit
 const char fileOpenFailedStr[] = "Ohjelmien luku epaonnistui!";
 
 unsigned int numOfPrograms{0};
-int constexpr programMaxLength{300};
 int constexpr maxNumOfPrograms{5};
 int constexpr programsMessageAreaSize{programMaxLength*maxNumOfPrograms};
 char programsMessageArea[programsMessageAreaSize];

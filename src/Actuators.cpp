@@ -25,12 +25,16 @@ void Actuator::start() const
 void Actuator::on() const
 {
 	digitalWrite(pin_, ON);
-	//Serial.print("["); Serial.print(millis());Serial.print("] ACT");Serial.print(pin_);Serial.println(": ON");
+#ifndef UNIT_TEST
+	Serial.print(F("[")); Serial.print(millis());Serial.print(F("] ACT"));Serial.print(pin_);Serial.println(": ON");
+#endif
 }
 void Actuator::off() const
 {
 	digitalWrite(pin_, OFF);
-	//Serial.print("["); Serial.print(millis());Serial.print("] ACT");Serial.print(pin_);Serial.println(": OFF");
+#ifndef UNIT_TEST
+	Serial.print(F("[")); Serial.print(millis());Serial.print(F("] ACT"));Serial.print(pin_);Serial.println(": OFF");
+#endif
 }
 
 Actuators::Actuators()

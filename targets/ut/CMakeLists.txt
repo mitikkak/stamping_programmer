@@ -9,6 +9,7 @@ set(product_sources_ut
         ${SRC_DIR}/Output.cpp
         ${SRC_DIR}/Buttons.cpp
         ${SRC_DIR}/Verification.cpp
+        ${SRC_DIR}/Parser.cpp
 )
 
 set(STUBS_DIR ${ARDUINO_CMAKE_DIR}/ut/stubs)
@@ -18,6 +19,7 @@ set(test_sources
              ${TEST_SRC_DIR}/TestCreateProgram.cpp
              ${TEST_SRC_DIR}/TestRunProgram.cpp
              ${TEST_SRC_DIR}/TestVerification.cpp
+             ${TEST_SRC_DIR}/TestParser.cpp
 )
 
 set(stub_sources 

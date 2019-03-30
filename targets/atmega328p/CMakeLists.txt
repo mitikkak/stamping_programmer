@@ -21,20 +21,22 @@ set(product_sources ${SRC_DIR}/Loop.cpp
         ${SRC_DIR}/Output.cpp
         ${SRC_DIR}/Buttons.cpp
         ${SRC_DIR}/Verification.cpp
+        ${SRC_DIR}/Parser.cpp
 )
 
-set(ext_sources ${SDFAT_DIR}/FatLib/FatFile.cpp
-    ${SDFAT_DIR}/FatLib/FatFileLFN.cpp
+set(ext_sources 
+    #${SDFAT_DIR}/FatLib/FatFile.cpp
+    #${SDFAT_DIR}/FatLib/FatFileLFN.cpp
     #${SDFAT_DIR}/FatLib/FatFilePrint.cpp
     #${SDFAT_DIR}/FatLib/FatFileSFN.cpp
-    ${SDFAT_DIR}/FatLib/FatVolume.cpp
+    #${SDFAT_DIR}/FatLib/FatVolume.cpp
     #${SDFAT_DIR}/FatLib/FmtNumber.cpp
     #${SDFAT_DIR}/FatLib/StdioStream.cpp
-    ${SDFAT_DIR}/FatLib/fstream.cpp
+    #${SDFAT_DIR}/FatLib/fstream.cpp
     #${SDFAT_DIR}/FatLib/istream.cpp
-    ${SDFAT_DIR}/FatLib/ostream.cpp
+    #${SDFAT_DIR}/FatLib/ostream.cpp
     #${SDFAT_DIR}/MinimumSerial.cpp
-    ${SDFAT_DIR}/SdCard/SdSpiCard.cpp
+    #${SDFAT_DIR}/SdCard/SdSpiCard.cpp
     #${SDFAT_DIR}/SdCard/SdSpiCardEX.cpp
     #${SDFAT_DIR}/SdCard/SdioCardEX.cpp
     #${SDFAT_DIR}/SdCard/SdioTeensy.cpp
@@ -58,7 +60,7 @@ target_include_directories(
     ${ARDUINO_PINS}
     ${SRC_DIR}
     ${PIN_CHANGE_INT_DIR}
-    ${SDFAT_DIR}
+    #${SDFAT_DIR}
     ${ARDUINO_SPI_SRC}
     ${ARDUINO_WIRE_SRC}
     ${IIC_LCD_SRC}

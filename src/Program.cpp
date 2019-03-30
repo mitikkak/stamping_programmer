@@ -12,16 +12,21 @@ Program::Program(Actuators& actors)
 {
 
 }
-Program::Program(Actuators& actors, const char* const savedProgram)
+Program::Program(Actuators& actors, const STRING_TYPE& prgStr)
 : actuators(actors)
 {
-	const int length = strlen(savedProgram);
+    fill(prgStr, 0, prgStr.length());
+}
+void Program::fill(const STRING_TYPE& prgStr, const size_t beginIndex, const size_t endIndex)
+{
+	const size_t length = endIndex - beginIndex; //strlen(prgStr);
+//	printf("%lu, %lu, %lu, %lu \n", prgStr.length(), beginIndex, endIndex, length);
     STRING_TYPE lineStr;
     STRING_TYPE periodStr;
     STRING_TYPE* currentStrPtr = &lineStr;
-	for (int i = 0; i < length; i++)
+	for (int i = beginIndex; i < endIndex; i++)
 	{
-		char const c = savedProgram[i];
+		char const c = prgStr[i];
 //		printf("c: %c \n", c);
 		if (c == '[')
 		{
@@ -47,6 +52,7 @@ Program::Program(Actuators& actors, const char* const savedProgram)
 		}
 		else
 		{
+
 			(*currentStrPtr) += c;
 		}
 	}

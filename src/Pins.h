@@ -12,6 +12,7 @@ static const int a2Pin{2};
 static const int a3Pin{8};
 static const int a4Pin{9};
 static const int sdSelectPin{10};
+static const int programReadyPin{LED_BUILTIN};
 #else
 static const int a1Pin{15};
 static const int a2Pin{2};

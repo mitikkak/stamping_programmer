@@ -57,6 +57,10 @@ STRING_TYPE Verification::check(const STRING_TYPE& progStr, const int numberOfOu
     status = true;
     return "Ok";
 }
+bool Verification::checkNonVerbal(const STRING_TYPE& progStr, const size_t beginIndex, const int endIndex, const int numberOfOutputs)
+{
+    return true;
+}
 bool Verification::isSeparator(const char& c) const
 {
 	return (c == startingSeparator) or (c == middleSeparator) or (c == endingSeparator);
