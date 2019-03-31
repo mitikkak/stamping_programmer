@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include "Components_12e.h"
+#include "Program.h"
 
 int constexpr htmlResponseSize{3000};
 char htmlResponse[htmlResponseSize]{};
@@ -164,6 +165,7 @@ const size_t configureSettingsInputBufferSize{33};
 char configureSettingsInputBuffer[configureSettingsInputBufferSize];
 void handleConfigureSettings(AsyncWebServerRequest *request)
 {
+    inProgramRunningMode = false;
 	memset(htmlResponse, 0, sizeof(htmlResponse));
 	memset(configureSettingsInputBuffer, 0, sizeof(configureSettingsInputBuffer));
 	int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
@@ -243,8 +245,14 @@ static const char programRemoveMessageBegin[] = R"rawliteral(<p>Poistettu ohjelm
 static const char deleteAllProgramsTitle[] = R"rawliteral(<title>Kaikkien ohjelmien poisto</title>)rawliteral";
 static const char deleteAllProgramsOkMessage[] = R"rawliteral(<p>Kaikki ohjelmat poistettu</p>)rawliteral";
 
-void handleRoot(AsyncWebServerRequest *request) {
+void serverRequestCommonTasks()
+{
+  inProgramRunningMode = false;
   memset(htmlResponse, 0, sizeof(htmlResponseSize));
+
+}
+void handleRoot(AsyncWebServerRequest *request) {
+  serverRequestCommonTasks();
   memset(programsMessageArea, 0, sizeof(programsMessageArea));
   int writtenBytes = snprintf(&htmlResponse[0], sizeof(INDEX_HEAD_HTML), INDEX_HEAD_HTML);
   Serial.print("sendResp: "); Serial.println(writtenBytes);
@@ -332,7 +340,7 @@ static const char runProgramOkMessageBegin[] = R"rawliteral(<p>Ajetaan ohjelma:
 char programSaveBuffer[programMaxLength];
 
 void handleCreateProgram(AsyncWebServerRequest *request) {
-    memset(htmlResponse, 0, sizeof(htmlResponse));
+    serverRequestCommonTasks();
     int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(createProgramTitle), createProgramTitle);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
@@ -393,7 +401,7 @@ void handleCreateProgram(AsyncWebServerRequest *request) {
 
 void handleRunProgram(AsyncWebServerRequest *request)
 {
-    memset(htmlResponse, 0, sizeof(htmlResponse));
+    serverRequestCommonTasks();
     int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(runProgramTitle), runProgramTitle);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
@@ -465,6 +473,11 @@ void handleRunProgram(AsyncWebServerRequest *request)
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(closeParagraph), closeParagraph);
     Serial.println(writtenBytes);
     closeAndSendHtmlResponse(writtenBytes, request);
+    inProgramRunningMode = true;
+#ifdef EXTERNAL_PROGRAM_RUNNER
+#else
+    program.fill(programSaveBuffer, 0, programLength-1);
+#endif
 }
 
 void printFileToSerial(File& file)
@@ -479,7 +492,7 @@ void printFileToSerial(File& file)
 
 void handleDeleteProgram(AsyncWebServerRequest *request)
 {
-    memset(htmlResponse, 0, sizeof(htmlResponse));
+    serverRequestCommonTasks();
     int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(deleteProgramTitle), deleteProgramTitle);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
@@ -575,7 +588,7 @@ void handleDeleteProgram(AsyncWebServerRequest *request)
 }
 void handleDeleteAllPrograms(AsyncWebServerRequest *request)
 {
-    memset(htmlResponse, 0, sizeof(htmlResponse));
+    serverRequestCommonTasks();
     int writtenBytes = snprintf(&htmlResponse[0], sizeof(htmlHeadBegin), htmlHeadBegin);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(deleteAllProgramsTitle), deleteAllProgramsTitle);
     writtenBytes += snprintf(&htmlResponse[writtenBytes-1], sizeof(htmlHeadEnd), htmlHeadEnd);
@@ -598,11 +611,13 @@ const char* password = "mutiainen";
 void setup()
 {
     Serial.begin(115200);
-//    buttons.init();
-//    actuators.add(a1);
-//    actuators.add(a2);
-//    actuators.add(a3);
-//    actuators.add(a4);
+#ifndef EXTERNAL_PROGRAM_RUNNER
+    buttons.init();
+    actuators.add(a1);
+    actuators.add(a2);
+    actuators.add(a3);
+    actuators.add(a4);
+#endif
     lcd.init();
     // Connect to Wi-Fi network with SSID and password
     lcd.clear();

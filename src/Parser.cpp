@@ -29,7 +29,7 @@ void Parser::parse(const STRING_TYPE& programStr, Program& prg)
     bool checkRetVal = v.checkNonVerbal(programStr, beginIndex, endIndex, prg.length());
     if (checkRetVal)
     {
-        prg.fill(programStr, beginIndex, endIndex);
+        prg.fill(programStr.c_str(), beginIndex, endIndex);
         ok_ = true;
     }
 

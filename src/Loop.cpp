@@ -73,7 +73,7 @@ void loop()
     }
     digitalWrite(programReadyPin, programAvailable ? HIGH : LOW);
 
-    if (buttons.up() and programAvailable)
+    if (buttons.select() and programAvailable)
     {
         currentProgram->run();
         Serial.println(F("Program executed!!"));

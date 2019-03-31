@@ -15,6 +15,7 @@ public:
 	int size() const { return numOfOutputs; }
 	const Output& operator[](const int) const;
 	static constexpr int maxOutputs = 50;
+	void reset();
 private:
 	void sureInsert(unsigned const index, Output o);
 	Output outputs[maxOutputs];

@@ -124,7 +124,7 @@ TEST_F(TestCreateProgram, loadProgram)
 {
 	Actuators actuators;
 	std::string savedProgram = "[12:1256][14:329098][348:21432]";
-	Program program(actuators, savedProgram.c_str());
+	Program program(actuators, savedProgram.c_str(), savedProgram.length());
 	SerialPrinter printer;
 	program.printTo(printer);
 	EXPECT_STREQ(savedProgram.c_str(), printer.output());

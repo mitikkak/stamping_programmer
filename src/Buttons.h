@@ -20,7 +20,7 @@ private:
     static void backButtonCB();
     static int upValue;
     static int downValue;
-    static int selectValue;
+    static volatile int selectValue;
     static int backValue;
 };
 }

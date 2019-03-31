@@ -8,7 +8,10 @@ Phases::Phases()
 {
 
 }
-
+void Phases::reset()
+{
+    numOfOutputs = 0;
+}
 void Phases::add(Output o)
 {
 	if (numOfOutputs < maxOutputs)
@@ -38,7 +41,6 @@ void Phases::insert(unsigned const index, Output o)
 }
 void Phases::sureInsert(unsigned const index, Output o)
 {
-    printf("Mikko DBG sureInsert \n", index);
 	outputs[index] = o;
 	numOfOutputs++;
 }

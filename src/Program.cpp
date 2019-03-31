@@ -12,13 +12,14 @@ Program::Program(Actuators& actors)
 {
 
 }
-Program::Program(Actuators& actors, const STRING_TYPE& prgStr)
+Program::Program(Actuators& actors, const char* prgStr, const size_t programLength)
 : actuators(actors)
 {
-    fill(prgStr, 0, prgStr.length());
+    fill(prgStr, 0, programLength);
 }
-void Program::fill(const STRING_TYPE& prgStr, const size_t beginIndex, const size_t endIndex)
+void Program::fill(const char* prgStr, const size_t beginIndex, const size_t endIndex)
 {
+    phases.reset();
 	const size_t length = endIndex - beginIndex; //strlen(prgStr);
 //	printf("%lu, %lu, %lu, %lu \n", prgStr.length(), beginIndex, endIndex, length);
     STRING_TYPE lineStr;
