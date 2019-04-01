@@ -65,9 +65,11 @@ TEST_F(TestRunProgram, simplest)
 	expectedEvents.push_back(PinEvent(a1.pin(), Actuator::OFF, o1.period()));
 	receivedEvents.verify(expectedEvents);
 }
-TEST_F(TestRunProgram, longStory)
+TEST_F(TestRunProgram, delayBetweenPhases)
 {
 	Program prog(actuators);
+	const int interphaseDelay{100};
+	prog.setInterphaseDelay(interphaseDelay);
 	std::vector<Output> outputs{
 		{3, 10},
 		{2, 30},
@@ -94,6 +96,7 @@ TEST_F(TestRunProgram, longStory)
 		expectedEvents.push_back(PinEvent(pin, Actuator::ON, time));
 		expectedEvents.push_back(PinEvent(pin, Actuator::OFF, time + o.period()));
 		time += o.period();
+		time += interphaseDelay;
 	}
 	receivedEvents.verify(expectedEvents);
 }

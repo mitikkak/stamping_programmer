@@ -30,3 +30,4 @@ extern LiquidCrystal_I2C lcd;
 extern AsyncWebServer server;
 extern stamping::Program program;
 extern bool inProgramRunningMode;
+extern int interphaseDelay;

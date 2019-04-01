@@ -17,6 +17,7 @@ public:
 	//void fill(const STRING_TYPE& prgStr, const size_t beginIndex, const size_t endIndex);
 	void fill(const char* prgStr, const size_t beginIndex, const size_t endIndex);
 	size_t printTo(Print& p) const;
+	void setInterphaseDelay(const int);
 	void addPhase(Output const o);
 	void insertPhase(unsigned index, Output const o);
 	void insert(unsigned index, const Program&);
@@ -26,6 +27,7 @@ public:
 private:
 	Phases phases;
 	Actuators& actuators;
+	int interphaseDelay{0};
 };
 
 }

@@ -85,6 +85,10 @@ void Program::run()
 		actor.on();
 		delay(output.period());
 		actor.off();
+		if (interphaseDelay)
+		{
+			delay(interphaseDelay);
+		}
 	}
 }
 void Program::insertPhase(unsigned index, Output const o)
@@ -101,6 +105,10 @@ void Program::insert(unsigned index, const Program& another)
 int Program::length() const
 {
 	return phases.size();
+}
+void Program::setInterphaseDelay(const int val)
+{
+	interphaseDelay = val;
 }
 #ifdef UNIT_TEST
 #include <cassert>

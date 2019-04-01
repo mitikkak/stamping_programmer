@@ -18,6 +18,7 @@ void loop()
         if (inProgramRunningMode and programRunGuardTimePassed())
         {
             prevTimeExecuted = millis();
+            program.setInterphaseDelay(interphaseDelay);
             program.run();
         }
 #else
