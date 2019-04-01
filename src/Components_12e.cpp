@@ -21,4 +21,3 @@ static const int server_port = 80;
 AsyncWebServer server(server_port);
 
 bool inProgramRunningMode{false};
-int interphaseDelay{0};

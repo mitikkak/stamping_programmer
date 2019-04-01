@@ -476,6 +476,10 @@ void handleRunProgram(AsyncWebServerRequest *request)
     inProgramRunningMode = true;
 #ifdef EXTERNAL_PROGRAM_RUNNER
 #else
+    Settings settings;
+    getSettings(settings);
+    program.setInterphaseDelay(settings.delay);
+    Serial.print("Setting program delay: "); Serial.println(settings.delay);
     program.fill(programSaveBuffer, 0, programLength-1);
 #endif
 }

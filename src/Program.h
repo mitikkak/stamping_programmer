@@ -25,9 +25,9 @@ public:
 	int length() const;
 	const Actuator& actuator(const int) const; // testability
 private:
+	int interphaseDelay{0};
 	Phases phases;
 	Actuators& actuators;
-	int interphaseDelay{0};
 };
 
 }
