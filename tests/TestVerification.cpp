@@ -67,3 +67,43 @@ TEST_F(TestVerification, failsAtSomethingBetweenPhases)
 	EXPECT_EQ(false, v.passed());
 	EXPECT_EQ(0, v.numOfPhases);
 }
+TEST_F(TestVerification, failsWithoutPhases)
+{
+	const std::string progStr{"sad"};
+	Verification v;
+	v.check(progStr, numberOfOutputs);
+	EXPECT_EQ(false, v.passed());
+	EXPECT_EQ(0, v.numOfPhases);
+}
+TEST_F(TestVerification, failsWithoutMeaningfulPhases)
+{
+	const std::string progStr{"[sad:sad]"};
+	Verification v;
+	v.check(progStr, numberOfOutputs);
+	EXPECT_EQ(false, v.passed());
+	EXPECT_EQ(0, v.numOfPhases);
+}
+TEST_F(TestVerification, failsWithoutStartSeparator)
+{
+	const std::string progStr{"[1:1]1:2]"};
+	Verification v;
+	v.check(progStr, numberOfOutputs);
+	EXPECT_EQ(false, v.passed());
+	EXPECT_EQ(0, v.numOfPhases);
+}
+TEST_F(TestVerification, failsWithoutMiddleSeparator)
+{
+	const std::string progStr{"[1:1][12]"};
+	Verification v;
+	v.check(progStr, numberOfOutputs);
+	EXPECT_EQ(false, v.passed());
+	EXPECT_EQ(0, v.numOfPhases);
+}
+TEST_F(TestVerification, failsWithoutEndSeparator)
+{
+	const std::string progStr{"[1:2[1:1]"};
+	Verification v;
+	v.check(progStr, numberOfOutputs);
+	EXPECT_EQ(false, v.passed());
+	EXPECT_EQ(0, v.numOfPhases);
+}

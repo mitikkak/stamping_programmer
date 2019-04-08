@@ -24,13 +24,13 @@ STRING_TYPE Verification::check(const STRING_TYPE& progStr, const int numberOfOu
         	}
         	valueStr += c;
         }
-        else if(c == endingSeparator and prevSeparator == middleSeparator)
+        else if((c == endingSeparator) and (prevSeparator == middleSeparator))
         {
         	prevSeparator = c;
         	valueStr="";
         	numOfPhases++;
         }
-        else if (c == middleSeparator) /*and prevSeparator == startingSeparator*/
+        else if ((c == middleSeparator) and (prevSeparator == startingSeparator))
         {
         	const int prevValue = atoi(valueStr.c_str());
         	if (prevValue > 0 and prevValue <= numberOfOutputs)
@@ -53,6 +53,10 @@ STRING_TYPE Verification::check(const STRING_TYPE& progStr, const int numberOfOu
         	numOfPhases = 0;
         	return unknownErrorStr;
         }
+    }
+    if (numOfPhases == 0)
+    {
+    	return "Ei vaiheita";
     }
     status = true;
     return "Ok";
