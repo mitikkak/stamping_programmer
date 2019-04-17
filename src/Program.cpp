@@ -81,7 +81,7 @@ void Program::run()
 	{
 		actuators.off();
 		const Output& output = phases[i];
-		Actuator& actor = actuators.get(output.line());
+		Actuator& actor = actuators.get(output.line()-1);
 		actor.on();
 		delay(output.period());
 		actor.off();
