@@ -36,6 +36,7 @@ set(EXT_SRC_DIR ${SDFAT_DIR}
                 #${WEB_SERVER_ESP8266_DIR}
                 ${ESP_ASYNC_WEB_SERVER_DIR}
                 ${ESP_ASYNC_TCP_DIR}
+                ${MDNS_ESP8266_DIR}
 )
 
 set(ext_sources 
@@ -45,6 +46,7 @@ set(ext_sources
     ${wifi_sources}
     ${esp_async_web_server_sources}
     ${esp_async_tcp_sources}
+    ${esp8266_mdns_sources}
 )
 
 set(all_sources ${sources} ${ext_sources})

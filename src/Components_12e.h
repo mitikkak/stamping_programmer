@@ -11,6 +11,7 @@
 #include "Pins_12e.h"
 #include "LiquidCrystal_I2C.h"
 #include "ESP8266WiFi.h"
+#include "ESP8266mDNS.h"
 #include "ESPAsyncTCP.h"
 #include "ESPAsyncWebServer.h"
 #include "FS.h"

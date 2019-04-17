@@ -628,6 +628,10 @@ void setup()
     lcd.setCursor(0,0);
     //WiFi.begin(ssid, password);
     WiFi.softAP(ssid, password);
+    if (!MDNS.begin("sarmari"))
+    {
+      Serial.println("Error setting up MDNS responder!");
+    }
     lcd.print(ssid);
     lcd.setCursor(0,1);
     lcd.print("IP: ");
